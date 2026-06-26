@@ -36,19 +36,30 @@ export class LLMNode extends BaseNode {
           let buffer = "";
 
           res.on("data", (chunk: Buffer) => {
-            buffer += chunk.toString();
+            const raw = chunk.toString();
+            console.error(`[LLMNode] RAW chunk (${raw.length}b): ${raw.slice(0, 200)}`);
+            buffer += raw;
             const lines = buffer.split("\n");
             buffer = lines.pop() ?? "";
 
             for (const line of lines) {
               const trimmed = line.trim();
-              if (!trimmed.startsWith("data: ") || trimmed.slice(6) === "[DONE]") continue;
+              if (trimmed.slice(0, 6) !== "data: ") continue;
+              const jsonStr = trimmed.slice(6);
+              if (jsonStr === "[DONE]") continue;
               try {
-                const parsed = JSON.parse(trimmed.slice(6));
+                const parsed = JSON.parse(jsonStr);
                 const delta = parsed.choices?.[0]?.delta as { content?: string; reasoning_content?: string } | undefined;
                 const text = delta?.content || delta?.reasoning_content || "";
-                if (text) texts.push(text);
-              } catch { /* skip */ }
+                if (text) {
+                  console.error(`[LLMNode] chunk: ${text}`);
+                  texts.push(text);
+                } else {
+                  console.error(`[LLMNode] empty chunk, delta keys: ${delta ? Object.keys(delta) : "null"}`);
+                }
+              } catch (e) {
+                console.error(`[LLMNode] JSON parse error: ${(e as Error).message} for: ${jsonStr.slice(0, 100)}`);
+              }
             }
           });
 
