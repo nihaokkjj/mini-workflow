@@ -1,0 +1,15 @@
+{
+  "name": "mini-dify",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Mini version of Dify - visual LLM workflow builder",
+  "scripts": {
+    "dev:backend": "pnpm --filter @mini-dify/backend dev",
+    "dev:frontend": "pnpm --filter @mini-dify/frontend dev",
+    "dev": "pnpm run --parallel dev:backend dev:frontend",
+    "build:shared": "pnpm --filter @mini-dify/shared build",
+    "build:backend": "pnpm --filter @mini-dify/backend build",
+    "build:frontend": "pnpm --filter @mini-dify/frontend build",
+    "build": "pnpm build:shared && pnpm run --parallel build:backend build:frontend"
+  }
+}
