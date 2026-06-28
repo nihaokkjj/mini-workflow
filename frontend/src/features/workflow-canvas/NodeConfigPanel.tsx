@@ -14,7 +14,7 @@ function StartConfig({ data, onChange }: { data: Record<string, unknown>; onChan
           }}
         />
       </label>
-      <p className="text-xs text-slate-400">Format: [{"variable": "query", "label": "User Query", "type": "text-input"}]</p>
+      <p className="text-xs text-slate-400">Format: [{`{"variable": "query", "label": "User Query", "type": "text-input"}`}]</p>
     </div>
   );
 }
