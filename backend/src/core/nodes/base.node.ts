@@ -56,17 +56,14 @@ export abstract class BaseNode {
     return value;
   }
 
-  /** Get the input values from upstream nodes (via the pool) */
+  /** Resolve node inputs from config.data.inputs mapping */
   protected getInputs(): Record<string, unknown> {
-    const inputs: Record<string, unknown> = {};
-    // Start nodes define input variables; other nodes resolve from pool
-    if (this.config.type === "start") return inputs;
-
-    // Read all inputs from the pool that are referenced by this node's config
-    const data = this.config.data;
-    for (const [key, value] of Object.entries(data)) {
-      inputs[key] = this.resolveValue(value);
+    const inputsConfig = this.config.data.inputs as Record<string, string> | undefined;
+    if (!inputsConfig) return {};
+    const result: Record<string, unknown> = {};
+    for (const [key, template] of Object.entries(inputsConfig)) {
+      result[key] = this.resolveTemplate(template);
     }
-    return inputs;
+    return result;
   }
 }

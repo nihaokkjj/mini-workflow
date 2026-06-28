@@ -36,30 +36,22 @@ export class LLMNode extends BaseNode {
           let buffer = "";
 
           res.on("data", (chunk: Buffer) => {
-            const raw = chunk.toString();
-            console.error(`[LLMNode] RAW chunk (${raw.length}b): ${raw.slice(0, 200)}`);
-            buffer += raw;
+            buffer += chunk.toString();
             const lines = buffer.split("\n");
             buffer = lines.pop() ?? "";
 
             for (const line of lines) {
               const trimmed = line.trim();
-              if (trimmed.slice(0, 6) !== "data: ") continue;
-              const jsonStr = trimmed.slice(6);
+              // Handle both "data: " and "data:" (Kimi sends no space)
+              if (!trimmed.startsWith("data:")) continue;
+              const jsonStr = trimmed.slice(5).replace(/^ /, "");
               if (jsonStr === "[DONE]") continue;
               try {
                 const parsed = JSON.parse(jsonStr);
                 const delta = parsed.choices?.[0]?.delta as { content?: string; reasoning_content?: string } | undefined;
                 const text = delta?.content || delta?.reasoning_content || "";
-                if (text) {
-                  console.error(`[LLMNode] chunk: ${text}`);
-                  texts.push(text);
-                } else {
-                  console.error(`[LLMNode] empty chunk, delta keys: ${delta ? Object.keys(delta) : "null"}`);
-                }
-              } catch (e) {
-                console.error(`[LLMNode] JSON parse error: ${(e as Error).message} for: ${jsonStr.slice(0, 100)}`);
-              }
+                if (text) texts.push(text);
+              } catch { /* skip */ }
             }
           });
 
@@ -67,9 +59,11 @@ export class LLMNode extends BaseNode {
             // Process remaining buffer
             for (const line of buffer.split("\n")) {
               const trimmed = line.trim();
-              if (!trimmed.startsWith("data: ") || trimmed.slice(6) === "[DONE]") continue;
+              if (!trimmed.startsWith("data:")) continue;
+              const jsonStr = trimmed.slice(5).replace(/^ /, "");
+              if (jsonStr === "[DONE]") continue;
               try {
-                const parsed = JSON.parse(trimmed.slice(6));
+                const parsed = JSON.parse(jsonStr);
                 const delta = parsed.choices?.[0]?.delta as { content?: string; reasoning_content?: string } | undefined;
                 const text = delta?.content || delta?.reasoning_content || "";
                 if (text) texts.push(text);
@@ -82,24 +76,22 @@ export class LLMNode extends BaseNode {
         },
       );
 
-      req.on("error", (err) => {
-        console.error(`[LLMNode] req error: ${err.message}`);
-        resolve({ texts: [], error: err.message });
-      });
+      req.on("error", (err) => resolve({ texts: [], error: err.message }));
       req.on("timeout", () => {
-        console.error("[LLMNode] req timeout");
         req.destroy();
         resolve({ texts: [], error: "LLM request timed out" });
       });
 
-      req.write(JSON.stringify({
-        model,
-        stream: true,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }));
+      req.write(
+        JSON.stringify({
+          model,
+          stream: true,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      );
       req.end();
     });
   }
@@ -113,12 +105,13 @@ export class LLMNode extends BaseNode {
     const apiKey = process.env.OPENAI_API_KEY ?? "sk-placeholder";
     const baseURL = (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
     const model = (data.model as string) || "gpt-4o-mini";
+    const inputs = this.getInputs();
     const systemPrompt = this.resolveTemplate((data.systemPrompt as string) || "You are a helpful assistant.");
-    const userPrompt = this.resolveTemplate((data.userPrompt as string) || "Hello");
+    const userPrompt = this.resolveTemplate(
+      (data.userPrompt as string) || (inputs.prompt as string) || "Hello"
+    );
 
-    console.error(`[LLMNode] Calling ${baseURL} with model=${model}`);
     const { texts, error } = await this.streamRequest(baseURL, apiKey, model, systemPrompt, userPrompt);
-    console.error(`[LLMNode] Response: texts=${texts.length}, error=${error || "none"}`);
 
     if (error) {
       yield { event: "error", nodeId, error, timestamp: Date.now() };
@@ -134,7 +127,6 @@ export class LLMNode extends BaseNode {
 
     const outputs = { text: fullText || "(empty)", model };
     this.pool.setNodeOutput(nodeId, outputs);
-    this.pool.setNodeOutput("__last_output", { value: outputs.text });
     yield { event: "node_end", nodeId, outputs, timestamp: Date.now() };
   }
 }

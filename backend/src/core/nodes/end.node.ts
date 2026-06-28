@@ -1,10 +1,6 @@
-import { BaseNode, VariablePool } from "./base.node";
-import { NodeConfig, NodeType, ExecutionContext, GraphEngineEvent } from "../../types";
+import { BaseNode } from "./base.node";
+import { NodeType, GraphEngineEvent } from "../../types";
 
-/**
- * EndNode — exit point of a workflow.
- * Collects selected variables from upstream nodes and produces the final output.
- */
 export class EndNode extends BaseNode {
   readonly nodeType: NodeType = "end";
 
@@ -16,10 +12,17 @@ export class EndNode extends BaseNode {
       timestamp: Date.now(),
     };
 
-    // End node output is whatever was selected via its config, or all upstream outputs
-    const outputs: Record<string, unknown> = {
-      result: (this.pool.resolve("__last_output") as Record<string, unknown>)?.value ?? "Workflow completed.",
-    };
+    const outputConfig = this.config.data.outputs as Record<string, string> | undefined;
+    const outputs: Record<string, unknown> = {};
+
+    if (outputConfig) {
+      for (const [key, selector] of Object.entries(outputConfig)) {
+        const resolved = this.pool.resolve(selector);
+        outputs[key] = resolved !== undefined ? resolved : `{{${selector}}}`;
+      }
+    } else {
+      outputs["result"] = "Workflow completed.";
+    }
 
     this.pool.setNodeOutput(this.config.id, outputs);
 
