@@ -1,0 +1,7 @@
+{"type":"server-started","port":58781,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:58781","screen_dir":"/Users/sijin.kuang/mini-dify/mini-dify/.superpowers/brainstorm/72110-1782616079/content","state_dir":"/Users/sijin.kuang/mini-dify/mini-dify/.superpowers/brainstorm/72110-1782616079/state"}
+{"type":"screen-added","file":"/Users/sijin.kuang/mini-dify/mini-dify/.superpowers/brainstorm/72110-1782616079/content/architecture.html"}
+{"type":"screen-added","file":"/Users/sijin.kuang/mini-dify/mini-dify/.superpowers/brainstorm/72110-1782616079/content/backend-ifelse.html"}
+{"type":"screen-added","file":"/Users/sijin.kuang/mini-dify/mini-dify/.superpowers/brainstorm/72110-1782616079/content/frontend-panel.html"}
+{"type":"screen-added","file":"/Users/sijin.kuang/mini-dify/mini-dify/.superpowers/brainstorm/72110-1782616079/content/frontend-remaining.html"}
+{"type":"screen-added","file":"/Users/sijin.kuang/mini-dify/mini-dify/.superpowers/brainstorm/72110-1782616079/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

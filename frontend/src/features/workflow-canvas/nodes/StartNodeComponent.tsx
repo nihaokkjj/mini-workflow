@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Handle, Position, type Node } from "@xyflow/react";
+import { Handle, Position } from "@xyflow/react";
 
 function StartNodeComponent({ data }: { data: Record<string, unknown> }) {
   return (

@@ -1,0 +1,124 @@
+<h2>后端设计: IfElseNode + 分支路由</h2>
+<p class="subtitle">核心问题：引擎如何根据条件选择 true/false 路径？</p>
+
+<div class="section">
+  <h3>问题分析</h3>
+  <p>当前 <code>graph-engine.ts</code> 做拓扑排序后按序执行所有节点，无法跳过分支。需要两个改动：</p>
+  <ol style="font-size:13px;line-height:1.8">
+    <li>IfElseNode 执行后，在 VariablePool 中标记 <code>branch = "true" | "false"</code></li>
+    <li>引擎根据每条边的 <code>sourceHandle</code> 决定是否走这条边</li>
+  </ol>
+</div>
+
+<div class="section">
+  <h3>设计: IfElseNode</h3>
+  <p style="font-size:13px">新文件: <code>backend/src/core/nodes/if-else.node.ts</code></p>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">IfElseNode.run() 伪代码</div>
+  <div class="mockup-body">
+    <pre style="font-size:12px;line-height:1.6;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto"><span style="color:#94a3b8">// 1. 读取条件表达式，如 "{{llm-1.text}} > 0.5"</span>
+<span style="color:#c084fc">const</span> rawCondition = data.condition <span style="color:#c084fc">as</span> <span style="color:#c084fc">string</span>;
+<span style="color:#c084fc">const</span> resolved = <span style="color:#c084fc">this</span>.resolveTemplate(rawCondition);
+
+<span style="color:#94a3b8">// 2. 安全求值: 用 Function 构造, 只允许简单比较</span>
+<span style="color:#c084fc">const</span> result = <span style="color:#c084fc">this</span>.evaluateCondition(resolved);
+<span style="color:#94a3b8">// 例: parseFloat("0.8") > parseFloat("0.5") → true</span>
+
+<span style="color:#94a3b8">// 3. 输出分支标记</span>
+<span style="color:#c084fc">this</span>.pool.setNodeOutput(nodeId, {
+  result: result,
+  branch: result ? <span style="color:#65a30d">"true"</span> : <span style="color:#ef4444">"false"</span>,
+  condition: resolved,
+});
+</pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>设计: 引擎分支路由</h3>
+  <p style="font-size:13px">修改: <code>graph-engine.ts</code> 中的 <code>run()</code> 方法</p>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">分支选择逻辑 (在 run 循环内部)</div>
+  <div class="mockup-body">
+    <pre style="font-size:12px;line-height:1.6;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto"><span style="color:#94a3b8">// 执行节点后, 获取它的输出</span>
+<span style="color:#c084fc">const</span> nodeOutputs = pool.getNodeOutput(nodeId);
+
+<span style="color:#94a3b8">// 构建应该执行的下游节点集合</span>
+<span style="color:#c084fc">const</span> activeTargets = <span style="color:#c084fc">new</span> <span style="color:#7dd3fc">Set</span>&lt;<span style="color:#c084fc">string</span>&gt;();
+<span style="color:#c084fc">for</span> (<span style="color:#c084fc">const</span> edge <span style="color:#c084fc">of</span> graph.edges) {
+  <span style="color:#c084fc">if</span> (edge.source !== nodeId) <span style="color:#c084fc">continue</span>;
+
+  <span style="color:#94a3b8">// 如果 source 节点有 branch 标记, 只匹配对应 handle</span>
+  <span style="color:#c084fc">if</span> (nodeOutputs?.branch) {
+    <span style="color:#c084fc">if</span> (edge.sourceHandle === nodeOutputs.branch) {
+      activeTargets.add(edge.target);
+    }
+    <span style="color:#94a3b8">// 不匹配的 branch → 跳过这个 target</span>
+  } <span style="color:#c084fc">else</span> {
+    <span style="color:#94a3b8">// 普通节点 → 所有下游都执行</span>
+    activeTargets.add(edge.target);
+  }
+}
+
+<span style="color:#94a3b8">// 不活跃的 target → 从拓扑顺序中移除</span>
+<span style="color:#c084fc">for</span> (<span style="color:#c084fc">const</span> nid <span style="color:#c084fc">of</span> remainingOrder) {
+  <span style="color:#c084fc">if</span> (!activeTargets.has(nid) && nid !== nodeId) {
+    <span style="color:#94a3b8">// 标记为跳过</span>
+    <span style="color:#c084fc">yield</span> { event: <span style="color:#65a30d">"node_skipped"</span>, nodeId: nid, ... };
+  }
+}
+</pre>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">NodeFactory 注册 (一行代码)</div>
+    <div class="mockup-body">
+      <pre style="font-size:12px;background:#1e293b;color:#e2e8f0;padding:12px;border-radius:6px"><span style="color:#94a3b8">// node-factory.ts static block</span>
+<span style="color:#c084fc">this</span>.register(<span style="color:#65a30d">"if-else"</span>, IfElseNode);</pre>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">类型定义 (已存在)</div>
+    <div class="mockup-body">
+      <pre style="font-size:12px;background:#1e293b;color:#e2e8f0;padding:12px;border-radius:6px"><span style="color:#94a3b8">// shared/src/index.ts</span>
+<span style="color:#c084fc">type</span> <span style="color:#7dd3fc">NodeType</span> = ... | <span style="color:#65a30d">"if-else"</span></pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>条件求值安全性</h3>
+  <p style="font-size:13px">不用 <code>eval()</code>，用正则匹配 + 简单比较：</p>
+</div>
+
+<div class="mockup">
+  <div class="mockup-body">
+    <pre style="font-size:12px;line-height:1.6;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px"><span style="color:#94a3b8">// 安全的条件求值: 只支持 数字/字符串 的简单比较</span>
+<span style="color:#c084fc">private</span> evaluateCondition(expr: <span style="color:#c084fc">string</span>): <span style="color:#c084fc">boolean</span> {
+  <span style="color:#94a3b8">// 模式: left op right  例: "0.8 > 0.5", "\"hello\" == \"hello\""</span>
+  <span style="color:#c084fc">const</span> match = expr.match(<span style="color:#65a30d">/^(.+?)\s*(==|!=|>=|<=|>|<|contains)\s*(.+)$/</span>);
+  <span style="color:#c084fc">if</span> (!match) <span style="color:#c084fc">throw new</span> <span style="color:#7dd3fc">Error</span>(<span style="color:#65a30d">"Invalid condition: "</span> + expr);
+
+  <span style="color:#c084fc">const</span> [, left, op, right] = match;
+  <span style="color:#c084fc">const</span> lv = isNaN(+left) ? left.trim() : +left;
+  <span style="color:#c084fc">const</span> rv = isNaN(+right) ? right.trim() : +right;
+
+  <span style="color:#c084fc">switch</span> (op) {
+    <span style="color:#c084fc">case</span> <span style="color:#65a30d">">"</span>: <span style="color:#c084fc">return</span> lv > rv;
+    <span style="color:#c084fc">case</span> <span style="color:#65a30d">"<"</span>: <span style="color:#c084fc">return</span> lv < rv;
+    <span style="color:#c084fc">case</span> <span style="color:#65a30d">"=="</span>: <span style="color:#c084fc">return</span> lv == rv;
+    <span style="color:#c084fc">case</span> <span style="color:#65a30d">"!="</span>: <span style="color:#c084fc">return</span> lv != rv;
+    <span style="color:#94a3b8">// ... 其他操作符</span>
+    <span style="color:#c084fc">default</span>: <span style="color:#c084fc">throw new</span> <span style="color:#7dd3fc">Error</span>(<span style="color:#65a30d">"Unknown operator: "</span> + op);
+  }
+}</pre>
+  </div>
+</div>
+
+<p style="margin-top:16px;font-size:13px;color:#64748b">请确认 IfElseNode + 分支路由的设计方案。</p>

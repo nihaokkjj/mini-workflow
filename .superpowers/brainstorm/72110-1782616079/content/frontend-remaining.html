@@ -1,0 +1,142 @@
+<h2>前端剩余 P0 改动</h2>
+<p class="subtitle">IfElse 组件 + Edge sourceHandle + 执行高亮 + 变量语义</p>
+
+<div class="section">
+  <h3>1. IfElseNodeComponent (新建)</h3>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">画布上的 IfElse 节点</div>
+    <div class="mockup-body" style="min-height:180px">
+      <div style="background:#fffbeb;border:2px solid#f59e0b;border-radius:8px;padding:12px;width:200px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <span style="font-size:16px">🔀</span>
+          <span style="font-weight:bold;color:#92400e;font-size:13px">If/Else</span>
+        </div>
+        <div style="font-size:10px;color:#78716c;background:#fef3c7;padding:4px 6px;border-radius:4px;margin-bottom:8px">
+          {{llm-1.text}} > 0.5
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px">
+          <span style="color:#10b981;font-weight:bold">TRUE ▼</span>
+          <span style="color:#ef4444;font-weight:bold">FALSE ▼</span>
+        </div>
+        <div style="position:relative;height:20px">
+          <div style="position:absolute;left:25%;bottom:0;width:8px;height:8px;background:#10b981;border-radius:50%"></div>
+          <div style="position:absolute;right:25%;bottom:0;width:8px;height:8px;background:#ef4444;border-radius:50%"></div>
+        </div>
+      </div>
+      <p style="font-size:10px;color:#94a3b8;margin-top:8px">两个 source Handle: true / false，带标签</p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">参考 Dify 的做法</div>
+    <div class="mockup-body" style="min-height:180px;font-size:12px">
+      <p>Dify 的 IfElseNode 有:</p>
+      <ul style="line-height:1.8">
+        <li>多个 case (IF / ELIF / ELSE)</li>
+        <li>每个 case 有独立 sourceHandle</li>
+        <li>Handle 上有标签显示 "IF" / "ELSE"</li>
+      </ul>
+      <p style="margin-top:8px;color:#64748b">mini-dify 最简版只需要:</p>
+      <ul style="line-height:1.8">
+        <li><strong>1 个条件表达式</strong> → true / false</li>
+        <li><strong>2 个输出 Handle</strong> (true + false)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Edge sourceHandle (修改 WorkflowCanvas.tsx)</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-body">
+    <pre style="font-size:12px;line-height:1.6;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px"><span style="color:#94a3b8">// onConnect 中保存 handle 信息</span>
+<span style="color:#c084fc">const</span> onConnect = <span style="color:#c084fc">useCallback</span>((conn: Connection) => {
+  <span style="color:#94a3b8">// 1. 通过 store.onConnect 保存到 Zustand (已有 sourceHandle/targetHandle 字段)</span>
+  store.onConnect({
+    ...conn,
+    sourceHandle: conn.sourceHandle ?? <span style="color:#c084fc">undefined</span>,
+    targetHandle: conn.targetHandle ?? <span style="color:#c084fc">undefined</span>,
+  });
+  <span style="color:#94a3b8">// 2. 同步到 ReactFlow 展示</span>
+  setRfEdges((eds) => [
+    ...eds,
+    { ...conn, id: <span style="color:#65a30d">`edge-${Date.now()}`</span> } <span style="color:#c084fc">as</span> Edge
+  ]);
+}, [store, setRfEdges]);</pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. 执行高亮 (修改 WorkflowCanvas.tsx)</h3>
+  <p style="font-size:13px">store 中已有 <code>executingNodeId</code>，只需在 ReactFlow 节点样式中使用。</p>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">动态节点样式</div>
+  <div class="mockup-body">
+    <pre style="font-size:12px;line-height:1.6;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px"><span style="color:#94a3b8">// 给当前执行的节点加橙色边框 + 动画</span>
+<span style="color:#c084fc">const</span> rfNodesWithHighlight = rfNodes.map(node => {
+  <span style="color:#c084fc">if</span> (node.id === store.executingNodeId) {
+    <span style="color:#c084fc">return</span> {
+      ...node,
+      className: <span style="color:#65a30d">"executing"</span>,  <span style="color:#94a3b8">// CSS: border-orange-500 animate-pulse</span>
+    };
+  }
+  <span style="color:#c084fc">return</span> node;
+});</pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>4. 变量传递语义 (修改 base.node.ts)</h3>
+  <p style="font-size:13px">当前 <code>__last_output</code> 固定取最后 LLM 输出，分支场景会出问题。</p>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">改进方案</div>
+  <div class="mockup-body">
+    <pre style="font-size:12px;line-height:1.6;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px"><span style="color:#94a3b8">// Step 1: 在 NodeConfig 的 data 中支持 inputs 声明</span>
+<span style="color:#94a3b8">// 例: data.inputs = { prompt: "{{llm-1.text}}", context: "{{start.query}}" }</span>
+
+<span style="color:#94a3b8">// Step 2: BaseNode.getInputs() 解析 inputs 映射</span>
+<span style="color:#c084fc">protected</span> getInputs(): <span style="color:#c084fc">Record</span>&lt;<span style="color:#c084fc">string</span>, <span style="color:#c084fc">unknown</span>&gt; {
+  <span style="color:#c084fc">const</span> inputsConfig = <span style="color:#c084fc">this</span>.config.data.inputs <span style="color:#c084fc">as</span> <span style="color:#c084fc">Record</span>&lt;<span style="color:#c084fc">string</span>, <span style="color:#c084fc">string</span>&gt; | <span style="color:#c084fc">undefined</span>;
+  <span style="color:#c084fc">if</span> (!inputsConfig) <span style="color:#c084fc">return</span> {};
+  <span style="color:#c084fc">const</span> result: <span style="color:#c084fc">Record</span>&lt;<span style="color:#c084fc">string</span>, <span style="color:#c084fc">unknown</span>&gt; = {};
+  <span style="color:#c084fc">for</span> (<span style="color:#c084fc">const</span> [key, template] <span style="color:#c084fc">of</span> <span style="color:#7dd3fc">Object</span>.entries(inputsConfig)) {
+    result[key] = <span style="color:#c084fc">this</span>.resolveTemplate(template);  <span style="color:#94a3b8">// 已有方法</span>
+  }
+  <span style="color:#c084fc">return</span> result;
+}
+
+<span style="color:#94a3b8">// Step 3: LLMNode 从 getInputs() 取值，不再依赖 __last_output</span>
+<span style="color:#c084fc">const</span> inputs = <span style="color:#c084fc">this</span>.getInputs();
+<span style="color:#c084fc">const</span> userPrompt = inputs[<span style="color:#65a30d">"prompt"</span>] ?? <span style="color:#65a30d">"Hello"</span>;</pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>总结: P0 文件变更清单</h3>
+  <table style="width:100%;font-size:12px;border-collapse:collapse">
+    <tr style="background:#f8fafc">
+      <th style="padding:6px;text-align:left;border:1px solid#e2e8f0">#</th>
+      <th style="padding:6px;text-align:left;border:1px solid#e2e8f0">文件</th>
+      <th style="padding:6px;text-align:left;border:1px solid#e2e8f0">操作</th>
+    </tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">1</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">backend/.../nodes/if-else.node.ts</td><td style="padding:6px;border:1px solid#e2e8f0">新建</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">2</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">backend/.../engine/graph-engine.ts</td><td style="padding:6px;border:1px solid#e2e8f0">修改</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">3</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">backend/.../engine/node-factory.ts</td><td style="padding:6px;border:1px solid#e2e8f0">修改</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">4</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">backend/.../nodes/base.node.ts</td><td style="padding:6px;border:1px solid#e2e8f0">修改</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">5</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">frontend/.../nodes/IfElseNodeComponent.tsx</td><td style="padding:6px;border:1px solid#e2e8f0">新建</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">6</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">frontend/.../NodeConfigPanel.tsx</td><td style="padding:6px;border:1px solid#e2e8f0">新建</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">7</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">frontend/.../WorkflowCanvas.tsx</td><td style="padding:6px;border:1px solid#e2e8f0">修改</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">8</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">frontend/.../stores/workflow.store.ts</td><td style="padding:6px;border:1px solid#e2e8f0">修改</td></tr>
+    <tr><td style="padding:6px;border:1px solid#e2e8f0">9</td><td style="padding:6px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">frontend/.../palette/NodePalette.tsx</td><td style="padding:6px;border:1px solid#e2e8f0">修改</td></tr>
+  </table>
+</div>
+
+<p style="margin-top:16px;font-size:13px;color:#64748b">请确认剩余 P0 改动方案。</p>

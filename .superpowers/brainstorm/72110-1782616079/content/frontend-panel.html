@@ -1,0 +1,144 @@
+<h2>后端: 图验证 + 前端: NodeConfigPanel</h2>
+<p class="subtitle">验证保证图结构正确，配置面板让用户能修改节点参数</p>
+
+<div class="section">
+  <h3>图验证 (graph-engine.ts 新增 validate() 方法)</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">validateGraph() — 在 run() 之前调用</div>
+  <div class="mockup-body">
+    <pre style="font-size:12px;line-height:1.6;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px"><span style="color:#c084fc">private</span> validate(): <span style="color:#c084fc">string</span> | <span style="color:#c084fc">null</span> {
+  <span style="color:#c084fc">const</span> startNodes = nodes.filter(n => n.type === <span style="color:#65a30d">"start"</span>);
+  <span style="color:#c084fc">if</span> (startNodes.length !== <span style="color:#f59e0b">1</span>)
+    <span style="color:#c084fc">return</span> <span style="color:#65a30d">"Workflow must have exactly 1 Start node"</span>;
+
+  <span style="color:#c084fc">const</span> endNodes = nodes.filter(n => n.type === <span style="color:#65a30d">"end"</span>);
+  <span style="color:#c084fc">if</span> (endNodes.length === <span style="color:#f59e0b">0</span>)
+    <span style="color:#c084fc">return</span> <span style="color:#65a30d">"Workflow must have at least 1 End node"</span>;
+
+  <span style="color:#94a3b8">// 孤立节点检查: 非 Start 节点入度 ≥ 1</span>
+  <span style="color:#c084fc">const</span> hasIncoming = <span style="color:#c084fc">new</span> <span style="color:#7dd3fc">Set</span>(edges.map(e => e.target));
+  <span style="color:#c084fc">for</span> (<span style="color:#c084fc">const</span> n <span style="color:#c084fc">of</span> nodes) {
+    <span style="color:#c084fc">if</span> (n.type === <span style="color:#65a30d">"start"</span>) <span style="color:#c084fc">continue</span>;
+    <span style="color:#c084fc">if</span> (!hasIncoming.has(n.id))
+      <span style="color:#c084fc">return</span> <span style="color:#65a30d">`Node ${n.id} has no incoming edge`</span>;
+  }
+
+  <span style="color:#94a3b8">// 节点类型合法性: 所有节点都有注册的构造器</span>
+  <span style="color:#c084fc">for</span> (<span style="color:#c084fc">const</span> n <span style="color:#c084fc">of</span> nodes) {
+    <span style="color:#c084fc">if</span> (!NodeFactory.has(n.type))
+      <span style="color:#c084fc">return</span> <span style="color:#65a30d">`Unknown node type: ${n.type}`</span>;
+  }
+
+  <span style="color:#c084fc">return null</span>; <span style="color:#94a3b8">// 验证通过</span>
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>NodeConfigPanel — 点击节点 → 右侧滑出抽屉</h3>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">画布视图</div>
+    <div class="mockup-body" style="min-height:280px">
+      <div style="display:flex;height:100%">
+        <div class="mock-sidebar" style="width:120px;font-size:11px">NodePalette</div>
+        <div style="flex:1;background:#f8fafc;border-radius:8px;position:relative;padding:16px">
+          <div style="position:absolute;top:40px;left:80px;background:#ecfdf5;border:2px solid#10b981;border-radius:8px;padding:8px 12px;font-size:12px">Start</div>
+          <div style="position:absolute;top:40px;left:250px;background:#fffbeb;border:3px solid#6366f1;border-radius:8px;padding:8px 12px;font-size:12px;box-shadow:0 0 0 3px rgba(99,102,241,0.3)">LLM ⬅ 选中</div>
+          <div style="position:absolute;top:40px;right:40px;background:#fef2f2;border:2px solid#ef4444;border-radius:8px;padding:8px 12px;font-size:12px">End</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">配置抽屉 (选中 LLM 节点)</div>
+    <div class="mockup-body" style="min-height:280px">
+      <div style="border-left:1px solid#e2e8f0;padding:12px;height:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <strong style="font-size:13px">LLM 配置</strong>
+          <span style="font-size:11px;color:#94a3b8">✕</span>
+        </div>
+        <div style="font-size:11px;display:flex;flex-direction:column;gap:8px">
+          <div>
+            <div class="label">Model</div>
+            <select style="width:100%;padding:4px;border-radius:4px;border:1px solid#cbd5e1;font-size:11px">
+              <option>gpt-4o-mini</option>
+              <option>gpt-4o</option>
+              <option>gpt-3.5-turbo</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">System Prompt</div>
+            <textarea style="width:100%;padding:4px;border-radius:4px;border:1px solid#cbd5e1;font-size:11px;height:50px">You are a helpful assistant.</textarea>
+          </div>
+          <div>
+            <div class="label">User Prompt (支持 {{变量}})</div>
+            <textarea style="width:100%;padding:4px;border-radius:4px;border:1px solid#cbd5e1;font-size:11px;height:50px">{{start.input}}</textarea>
+          </div>
+        </div>
+        <button class="mock-button" style="width:100%;margin-top:8px">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>NodeConfigPanel 实现方案</h3>
+  <table style="width:100%;font-size:12px;border-collapse:collapse">
+    <tr style="background:#f8fafc">
+      <th style="padding:6px;text-align:left;border:1px solid#e2e8f0">节点类型</th>
+      <th style="padding:6px;text-align:left;border:1px solid#e2e8f0">配置项</th>
+    </tr>
+    <tr>
+      <td style="padding:6px;border:1px solid#e2e8f0;font-weight:bold">Start</td>
+      <td style="padding:6px;border:1px solid#e2e8f0">输入字段列表 (variable + label + type)</td>
+    </tr>
+    <tr>
+      <td style="padding:6px;border:1px solid#e2e8f0;font-weight:bold">LLM</td>
+      <td style="padding:6px;border:1px solid#e2e8f0">模型选择 + System Prompt + User Prompt</td>
+    </tr>
+    <tr>
+      <td style="padding:6px;border:1px solid#e2e8f0;font-weight:bold">IfElse</td>
+      <td style="padding:6px;border:1px solid#e2e8f0">条件表达式输入框 (如 <code>{{llm-1.text}} > 0.5</code>)</td>
+    </tr>
+    <tr>
+      <td style="padding:6px;border:1px solid#e2e8f0;font-weight:bold">End</td>
+      <td style="padding:6px;border:1px solid#e2e8f0">输出变量选择器 (从上游选择字段)</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>实现方式</h3>
+  <div class="pros-cons">
+    <div class="pros"><h4>推荐: 命令式渲染函数</h4>
+      <ul>
+        <li>一个 map: <code>NodeType → renderForm(nodeData, onChange)</code></li>
+        <li>不需要为每种节点建独立组件文件</li>
+        <li>和项目当前规模匹配，避免过度工程化</li>
+      </ul>
+    </div>
+    <div class="cons"><h4>备选: 独立 Panel 组件 (Dify 方式)</h4>
+      <ul>
+        <li>每种节点一个 panel.tsx</li>
+        <li>适合复杂配置场景</li>
+        <li>当前阶段过度设计</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Store 改动 (只需加一个字段)</h3>
+  <pre style="font-size:12px;background:#1e293b;color:#e2e8f0;padding:12px;border-radius:6px"><span style="color:#94a3b8">// workflow.store.ts 新增</span>
+selectedNodeId: <span style="color:#c084fc">string</span> | <span style="color:#c084fc">null</span>,
+selectNode: (id: <span style="color:#c084fc">string</span> | <span style="color:#c084fc">null</span>) => set({ selectedNodeId: id }),
+updateNodeData: (id: <span style="color:#c084fc">string</span>, data: <span style="color:#c084fc">Record</span>&lt;<span style="color:#c084fc">string</span>, <span style="color:#c084fc">unknown</span>&gt;) =>
+  set(s => ({ nodes: s.nodes.map(n => n.id === id ? { ...n, data } : n) }))</pre>
+</div>
+
+<p style="margin-top:16px;font-size:13px;color:#64748b">请确认 图验证 + NodeConfigPanel 的设计方案。</p>

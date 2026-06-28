@@ -1,0 +1,96 @@
+<h2>Mini-Dify P0 实现架构总览</h2>
+<p class="subtitle">Phase 2.1-2.3 + 2.8: IfElse 分支 + 图验证 + NodeConfigPanel</p>
+
+<div class="section">
+  <h3>后端改动</h3>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">当前架构 (线性执行)</div>
+    <div class="mockup-body">
+      <div style="display:flex;align-items:center;gap:8px;padding:16px;flex-wrap:wrap">
+        <div style="background:#ecfdf5;border:2px solid #10b981;border-radius:8px;padding:8px 12px;font-size:12px">Start</div>
+        <span style="color:#94a3b8">→</span>
+        <div style="background:#f5f3ff;border:2px solid #8b5cf6;border-radius:8px;padding:8px 12px;font-size:12px">LLM</div>
+        <span style="color:#94a3b8">→</span>
+        <div style="background:#fef2f2;border:2px solid #ef4444;border-radius:8px;padding:8px 12px;font-size:12px">End</div>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-top:8px">Kahn 拓扑排序 → 逐个执行 → 只能走直线</p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">目标架构 (支持分支)</div>
+    <div class="mockup-body">
+      <div style="display:flex;align-items:center;gap:8px;padding:16px;flex-wrap:wrap;font-size:12px">
+        <div style="background:#ecfdf5;border:2px solid#10b981;border-radius:8px;padding:8px 12px">Start</div>
+        <span style="color:#94a3b8">→</span>
+        <div style="background:#fffbeb;border:2px solid#f59e0b;border-radius:8px;padding:8px 12px">If/Else</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:4px"><span style="color:#10b981;font-weight:bold">T</span><span style="color:#94a3b8">→</span><div style="background:#f5f3ff;border:1px solid#8b5cf6;border-radius:6px;padding:4px 8px">LLM-A</div></div>
+          <div style="display:flex;align-items:center;gap:4px"><span style="color:#ef4444;font-weight:bold">F</span><span style="color:#94a3b8">→</span><div style="background:#f5f3ff;border:1px solid#8b5cf6;border-radius:6px;padding:4px 8px">LLM-B</div></div>
+        </div>
+        <span style="color:#94a3b8">→</span>
+        <div style="background:#fef2f2;border:2px solid#ef4444;border-radius:8px;padding:8px 12px">End</div>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-top:8px">根据条件表达式选择 true/false 分支执行</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>核心改动点 (3个后端 + 1个前端)</h3>
+</div>
+
+<table style="width:100%;font-size:13px;border-collapse:collapse">
+  <tr style="background:#f8fafc">
+    <th style="padding:8px;text-align:left;border:1px solid#e2e8f0">模块</th>
+    <th style="padding:8px;text-align:left;border:1px solid#e2e8f0">文件</th>
+    <th style="padding:8px;text-align:left;border:1px solid#e2e8f0">关键改动</th>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid#e2e8f0;font-weight:bold">1. IfElseNode</td>
+    <td style="padding:8px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">backend/.../nodes/if-else.node.ts</td>
+    <td style="padding:8px;border:1px solid#e2e8f0">解析条件表达式 → 设置 branch 标记 → 引擎据此选路</td>
+  </tr>
+  <tr style="background:#f8fafc">
+    <td style="padding:8px;border:1px solid#e2e8f0;font-weight:bold">2. 分支路由</td>
+    <td style="padding:8px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">backend/.../engine/graph-engine.ts</td>
+    <td style="padding:8px;border:1px solid#e2e8f0">根据 sourceHandle 选择实际下游路径</td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid#e2e8f0;font-weight:bold">3. 图验证</td>
+    <td style="padding:8px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">backend/.../engine/graph-engine.ts</td>
+    <td style="padding:8px;border:1px solid#e2e8f0">Start数量/End数量/孤立节点/类型合法性校验</td>
+  </tr>
+  <tr style="background:#f8fafc">
+    <td style="padding:8px;border:1px solid#e2e8f0;font-weight:bold">4. NodeConfigPanel</td>
+    <td style="padding:8px;border:1px solid#e2e8f0;font-family:monospace;font-size:11px">frontend/.../NodeConfigPanel.tsx</td>
+    <td style="padding:8px;border:1px solid#e2e8f0">点击节点 → 右侧抽屉 → 按类型渲染表单</td>
+  </tr>
+</table>
+
+<div class="section">
+  <h3>Dify 参考模式</h3>
+</div>
+
+<div class="pros-cons">
+  <div class="pros"><h4>Dify 的做法 (值得借鉴)</h4>
+    <ul>
+      <li>NodeFactory 注册模式 — 注册新节点只需一行代码</li>
+      <li>每个节点类型自带 default.ts + types.ts + panel.tsx</li>
+      <li>面板与节点组件分离 — 面板在右侧 drawer，节点在画布上</li>
+      <li>Edge 的 sourceHandle 区分分支路由</li>
+    </ul>
+  </div>
+  <div class="cons"><h4>Dify 的做法 (暂不采用)</h4>
+    <ul>
+      <li>graphon 独立库 — mini-dify 保持内联实现</li>
+      <li>多条件 AND/OR 组合 — 先做最简单条件</li>
+      <li>Jotai + TanStack Query — 保持现有 Zustand 方案</li>
+      <li>版本化节点 (version) — 当前不需要</li>
+    </ul>
+  </div>
+</div>
+
+<p style="margin-top:16px;font-size:13px;color:#64748b">请确认这个整体方向是否正确，然后我们逐个深入每个模块的设计。</p>
