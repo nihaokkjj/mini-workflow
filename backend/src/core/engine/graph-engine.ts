@@ -2,31 +2,29 @@ import { Graph, EdgeConfig, ExecutionContext, GraphEngineEvent } from "../../typ
 import { BaseNode, VariablePool } from "../nodes/base.node";
 import { NodeFactory } from "./node-factory";
 
-/**
- * GraphEngine — executes a workflow DAG.
- *
- * Algorithm:
- * 1. Topological sort (Kahn's) to determine node execution order.
- * 2. Execute nodes sequentially in topological order.
- * 3. After each node runs, feed its outputs to downstream nodes via VariablePool.
- */
+export class ExecutionLimitError extends Error {
+  constructor(msg: string) { super(msg); this.name = "ExecutionLimitError"; }
+}
+
 export class GraphEngine {
   private graph: Graph;
   private pool: VariablePool;
   private context: ExecutionContext;
+  private maxSteps: number;
+  private maxTimeMs: number;
 
-  constructor(graph: Graph, context: ExecutionContext) {
+  constructor(graph: Graph, context: ExecutionContext, opts?: { maxSteps?: number; maxTimeMs?: number }) {
     this.graph = graph;
     this.pool = new VariablePool();
     this.context = context;
+    this.maxSteps = opts?.maxSteps ?? 50;
+    this.maxTimeMs = opts?.maxTimeMs ?? 30000;
   }
 
-  /** Get a node config by ID */
   private node(id: string) {
     return this.graph.nodes.find((n) => n.id === id);
   }
 
-  /** Compute in-degree for every node */
   private computeInDegrees(): Map<string, number> {
     const inDegree = new Map<string, number>();
     for (const node of this.graph.nodes) {
@@ -38,7 +36,6 @@ export class GraphEngine {
     return inDegree;
   }
 
-  /** Build adjacency list: nodeId → [targetNodeIds] */
   private buildAdjList(): Map<string, string[]> {
     const adj = new Map<string, string[]>();
     for (const node of this.graph.nodes) {
@@ -52,14 +49,12 @@ export class GraphEngine {
     return adj;
   }
 
-  /** Topological sort using Kahn's algorithm */
   private topologicalSort(): string[] {
     const inDegree = this.computeInDegrees();
     const adj = this.buildAdjList();
     const queue: string[] = [];
     const result: string[] = [];
 
-    // Find all nodes with in-degree 0
     for (const [nodeId, degree] of inDegree) {
       if (degree === 0) queue.push(nodeId);
     }
@@ -67,7 +62,6 @@ export class GraphEngine {
     while (queue.length > 0) {
       const current = queue.shift()!;
       result.push(current);
-
       for (const neighbor of adj.get(current) ?? []) {
         const newDeg = (inDegree.get(neighbor) ?? 1) - 1;
         inDegree.set(neighbor, newDeg);
@@ -78,35 +72,122 @@ export class GraphEngine {
     if (result.length !== this.graph.nodes.length) {
       throw new Error("Cycle detected in workflow graph");
     }
-
     return result;
   }
 
-  /** Execute the graph and yield events */
+  /** Validate the graph structure. Returns null if valid, error message otherwise. */
+  validate(): string | null {
+    const { nodes, edges } = this.graph;
+
+    // 1. Exactly one Start node
+    const startNodes = nodes.filter((n) => n.type === "start");
+    if (startNodes.length === 0) return "Workflow must have exactly 1 Start node (found 0)";
+    if (startNodes.length > 1) return `Workflow must have exactly 1 Start node (found ${startNodes.length})`;
+
+    // 2. At least one End node
+    const endNodes = nodes.filter((n) => n.type === "end");
+    if (endNodes.length === 0) return "Workflow must have at least 1 End node";
+
+    // 3. Non-Start nodes must have incoming edges
+    const hasIncoming = new Set(edges.map((e) => e.target));
+    for (const n of nodes) {
+      if (n.type === "start") continue;
+      if (!hasIncoming.has(n.id)) {
+        return `Node "${n.id}" (type: ${n.type}) has no incoming edge — isolated nodes are not allowed`;
+      }
+    }
+
+    // 4. All node types must be registered
+    for (const n of nodes) {
+      if (!NodeFactory.has(n.type)) {
+        return `Unknown node type: "${n.type}" on node "${n.id}"`;
+      }
+    }
+
+    return null;
+  }
+
+  /** Compute which downstream nodes should execute based on branch routing. */
+  private getActiveTargets(sourceNodeId: string): Set<string> {
+    const sourceOutputs = this.pool.getNodeOutput(sourceNodeId);
+    const active = new Set<string>();
+
+    for (const edge of this.graph.edges) {
+      if (edge.source !== sourceNodeId) continue;
+
+      if (sourceOutputs?.branch) {
+        // Branch node: only follow edges matching the branch value
+        if (edge.sourceHandle === sourceOutputs.branch) {
+          active.add(edge.target);
+        }
+      } else {
+        // Non-branch node: follow all downstream edges
+        active.add(edge.target);
+      }
+    }
+    return active;
+  }
+
   async *run(): AsyncGenerator<GraphEngineEvent> {
+    // Validate before execution
+    const validationError = this.validate();
+    if (validationError) {
+      yield { event: "error", nodeId: null, error: validationError, timestamp: Date.now() };
+      return;
+    }
+
     const order = this.topologicalSort();
+    const skipped = new Set<string>();
+    let stepCount = 0;
+    const startTime = Date.now();
 
     for (const nodeId of order) {
+      // Execution limits
+      stepCount++;
+      if (stepCount > this.maxSteps) {
+        yield { event: "error", nodeId: null, error: `Execution limit reached: max ${this.maxSteps} steps`, timestamp: Date.now() };
+        return;
+      }
+      if (Date.now() - startTime > this.maxTimeMs) {
+        yield { event: "error", nodeId: null, error: `Execution timeout after ${this.maxTimeMs}ms`, timestamp: Date.now() };
+        return;
+      }
+
+      // Skip nodes on inactive branches
+      if (skipped.has(nodeId)) continue;
+
       const config = this.node(nodeId);
       if (!config) continue;
 
       const nodeInstance: BaseNode = NodeFactory.create(config, this.pool, this.context);
 
       for await (const event of nodeInstance.run()) {
-        yield event;
         if (event.event === "error") {
-          // Stop execution on any error
-          return;
+          yield event;
+          return; // Stop on error
+        }
+        yield event;
+      }
+
+      // After node execution: compute active targets for branch routing
+      const activeTargets = this.getActiveTargets(nodeId);
+      for (const targetId of order) {
+        if (targetId === nodeId) continue;
+        const targetIndex = order.indexOf(targetId);
+        if (targetIndex <= order.indexOf(nodeId)) continue;
+        if (!activeTargets.has(targetId)) {
+          skipped.add(targetId);
+          yield { event: "node_skipped", nodeId: targetId, reason: "Branch not taken", timestamp: Date.now() };
         }
       }
     }
 
-    // Collect final output from the End node (last node in order)
+    // Collect final output from End nodes
     const endNode = this.graph.nodes.find((n) => n.type === "end");
-    const finalOutputs = endNode
+    const endOutputs = endNode
       ? (this.pool.getNodeOutput(endNode.id) ?? { result: "Workflow completed" })
       : { result: "Workflow completed" };
 
-    yield { event: "graph_end", outputs: finalOutputs, timestamp: Date.now() };
+    yield { event: "graph_end", outputs: endOutputs, timestamp: Date.now() };
   }
 }
