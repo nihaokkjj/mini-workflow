@@ -3,6 +3,7 @@ import { BaseNode, VariablePool } from "../nodes/base.node";
 import { StartNode } from "../nodes/start.node";
 import { EndNode } from "../nodes/end.node";
 import { LLMNode } from "../nodes/llm.node";
+import { IfElseNode } from "../nodes/if-else.node";
 
 /** Map of node type string to its constructor */
 type NodeConstructor = new (
@@ -18,10 +19,15 @@ export class NodeFactory {
     this.register("start", StartNode);
     this.register("end", EndNode);
     this.register("llm", LLMNode);
+    this.register("if-else", IfElseNode);
   }
 
   static register(type: string, ctor: NodeConstructor): void {
     this.registry.set(type, ctor);
+  }
+
+  static has(type: string): boolean {
+    return this.registry.has(type);
   }
 
   static create(
