@@ -128,6 +128,22 @@ export class GraphEngine {
     return active;
   }
 
+  /** Find all nodes reachable from a given set of starting nodes */
+  private reachable(startNodes: Set<string>): Set<string> {
+    const adj = this.buildAdjList();
+    const visited = new Set<string>();
+    const queue = [...startNodes];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      for (const neighbor of adj.get(current) ?? []) {
+        if (!visited.has(neighbor)) queue.push(neighbor);
+      }
+    }
+    return visited;
+  }
+
   async *run(): AsyncGenerator<GraphEngineEvent> {
     // Validate before execution
     const validationError = this.validate();
@@ -164,20 +180,32 @@ export class GraphEngine {
       for await (const event of nodeInstance.run()) {
         if (event.event === "error") {
           yield event;
-          return; // Stop on error
+          return;
         }
         yield event;
       }
 
-      // After node execution: compute active targets for branch routing
-      const activeTargets = this.getActiveTargets(nodeId);
-      for (const targetId of order) {
-        if (targetId === nodeId) continue;
-        const targetIndex = order.indexOf(targetId);
-        if (targetIndex <= order.indexOf(nodeId)) continue;
-        if (!activeTargets.has(targetId)) {
-          skipped.add(targetId);
-          yield { event: "node_skipped", nodeId: targetId, reason: "Branch not taken", timestamp: Date.now() };
+      // After branch node execution: mark the entire inactive subgraph as skipped
+      const nodeConfig = this.node(nodeId);
+      if (nodeConfig?.type === "if-else") {
+        const sourceOutputs = this.pool.getNodeOutput(nodeId);
+        if (sourceOutputs?.branch) {
+          // Find all edges from this node that are NOT on the taken branch
+          const inactiveTargets = new Set<string>();
+          for (const edge of this.graph.edges) {
+            if (edge.source !== nodeId) continue;
+            if (edge.sourceHandle !== sourceOutputs.branch) {
+              inactiveTargets.add(edge.target);
+            }
+          }
+          // Mark the entire subgraph reachable from inactive targets as skipped
+          if (inactiveTargets.size > 0) {
+            const inactiveSubgraph = this.reachable(inactiveTargets);
+            for (const skippedId of inactiveSubgraph) {
+              skipped.add(skippedId);
+              yield { event: "node_skipped", nodeId: skippedId, reason: "Branch not taken", timestamp: Date.now() };
+            }
+          }
         }
       }
     }

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -45,6 +45,14 @@ function WorkflowCanvasInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [output, setOutput] = useState("");
+  const streamControllerRef = useRef<AbortController | null>(null);
+
+  // Cleanup SSE stream on unmount
+  useEffect(() => {
+    return () => {
+      streamControllerRef.current?.abort();
+    };
+  }, []);
 
   const onConnect = useCallback(
     (conn: Connection) => {
@@ -144,6 +152,8 @@ function WorkflowCanvasInner() {
 
   const handleRun = async () => {
     if (!store.workflowId) return;
+    // Abort any existing stream
+    streamControllerRef.current?.abort();
     store.setRunning(true);
     store.clearEvents();
     setOutput("");
@@ -151,7 +161,7 @@ function WorkflowCanvasInner() {
     try {
       const { data: runData } = await startRun(store.workflowId, { input: "Hello" });
 
-      subscribeToRunStream(
+      const controller = subscribeToRunStream(
         runData.runId,
         (event: GraphEngineEvent) => {
           store.addEvent(event);
@@ -177,6 +187,7 @@ function WorkflowCanvasInner() {
           store.setRunning(false);
         },
       );
+      streamControllerRef.current = controller;
     } catch (err: any) {
       setOutput(`Error: ${err.message}`);
       store.setRunning(false);
