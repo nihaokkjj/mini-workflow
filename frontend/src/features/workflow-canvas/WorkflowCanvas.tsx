@@ -9,6 +9,7 @@ import {
   ReactFlowProvider,
   type Connection,
   type Node,
+  type Edge,
   type NodeChange,
   type EdgeChange,
 } from "@xyflow/react";
@@ -17,7 +18,9 @@ import "@xyflow/react/dist/style.css";
 import StartNodeComponent from "./nodes/StartNodeComponent";
 import EndNodeComponent from "./nodes/EndNodeComponent";
 import LLMNodeComponent from "./nodes/LLMNodeComponent";
+import IfElseNodeComponent from "./nodes/IfElseNodeComponent";
 import { NodePalette } from "./palette/NodePalette";
+import { NodeConfigPanel } from "./NodeConfigPanel";
 import { useWorkflowStore } from "../../stores/workflow.store";
 import { saveWorkflow, startRun, subscribeToRunStream } from "../../services/api";
 import type { NodeType, GraphEngineEvent } from "../../types";
@@ -26,6 +29,7 @@ const nodeTypes = {
   start: StartNodeComponent,
   end: EndNodeComponent,
   llm: LLMNodeComponent,
+  "if-else": IfElseNodeComponent,
 };
 
 let nodeIdCounter = 0;
@@ -36,16 +40,20 @@ function nextId(type: NodeType) {
 
 function WorkflowCanvasInner() {
   const store = useWorkflowStore();
-  const [rfNodes, setRfNodes, onNodesChangeRf] = useNodesState([]);
-  const [rfEdges, setRfEdges, onEdgesChangeRf] = useEdgesState([]);
+  const [rfNodes, setRfNodes, onNodesChangeRf] = useNodesState<Node>([]);
+  const [rfEdges, setRfEdges, onEdgesChangeRf] = useEdgesState<Edge>([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [output, setOutput] = useState("");
 
   const onConnect = useCallback(
     (conn: Connection) => {
-      store.onConnect(conn);
-      setRfEdges((eds) => [...eds, { ...conn, id: `edge-${Date.now()}` } as any]);
+      store.onConnect({
+        ...conn,
+        sourceHandle: conn.sourceHandle ?? undefined,
+        targetHandle: conn.targetHandle ?? undefined,
+      });
+      setRfEdges((eds) => [...eds, { ...conn, id: `edge-${Date.now()}` } as Edge]);
     },
     [store, setRfEdges],
   );
@@ -86,7 +94,7 @@ function WorkflowCanvasInner() {
         id: nextId(type),
         type,
         position,
-        data: { model: "gpt-4o-mini" },
+        data: {},
       };
 
       setRfNodes((nds) => [...nds, newNode]);
@@ -104,6 +112,17 @@ function WorkflowCanvasInner() {
     [reactFlowInstance, setRfNodes, store],
   );
 
+  const onNodeClick = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      store.selectNode(node.id);
+    },
+    [store],
+  );
+
+  const onCanvasClick = useCallback(() => {
+    store.selectNode(null);
+  }, [store]);
+
   const handleSave = async () => {
     if (!store.appId) return;
     try {
@@ -116,7 +135,7 @@ function WorkflowCanvasInner() {
           data: n.data ?? {},
         })),
         edges: store.edges,
-      }));
+      });
       alert("Workflow saved!");
     } catch {
       alert("Save failed.");
@@ -142,6 +161,8 @@ function WorkflowCanvasInner() {
             setOutput((prev) => prev + event.text);
           } else if (event.event === "node_end") {
             store.setExecutingNode(null);
+          } else if (event.event === "node_skipped") {
+            setOutput((prev) => prev + `[Skipped: ${event.nodeId}] ${event.reason}\n`);
           } else if (event.event === "graph_end") {
             setOutput(JSON.stringify(event.outputs, null, 2));
             store.setRunning(false);
@@ -162,13 +183,16 @@ function WorkflowCanvasInner() {
     }
   };
 
-  // Sync ReactFlow state to Zustand
-  const onInit = useCallback(
-    (_instance: any) => {
-      setReactFlowInstance(_instance);
-    },
-    [],
-  );
+  const onInit = useCallback((_instance: any) => {
+    setReactFlowInstance(_instance);
+  }, []);
+
+  const highlightedNodes = rfNodes.map((node) => {
+    if (node.id === store.executingNodeId) {
+      return { ...node, className: "executing" };
+    }
+    return node;
+  });
 
   return (
     <div className="flex h-full">
@@ -199,11 +223,13 @@ function WorkflowCanvasInner() {
         {/* Canvas */}
         <div ref={reactFlowWrapper} className="flex-1" onDragOver={onDragOver} onDrop={onDrop}>
           <ReactFlow
-            nodes={rfNodes}
+            nodes={highlightedNodes}
             edges={rfEdges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onPaneClick={onCanvasClick}
             onInit={onInit}
             nodeTypes={nodeTypes}
             fitView
@@ -221,6 +247,7 @@ function WorkflowCanvasInner() {
           </div>
         )}
       </div>
+      <NodeConfigPanel />
     </div>
   );
 }

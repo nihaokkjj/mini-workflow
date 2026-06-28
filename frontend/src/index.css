@@ -11,3 +11,12 @@ html, body, #root {
 .react-flow__node {
   font-size: 12px;
 }
+
+.executing {
+  box-shadow: 0 0 0 2px #f59e0b;
+  animation: node-pulse 1.5s ease-in-out infinite;
+}
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px #f59e0b; }
+  50% { box-shadow: 0 0 0 4px #fbbf24; }
+}
