@@ -4,9 +4,9 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
-  Connection,
-  NodeChange,
-  EdgeChange,
+  type Connection,
+  type NodeChange,
+  type EdgeChange,
 } from "@xyflow/react";
 
 interface WorkflowState {
@@ -29,6 +29,9 @@ interface WorkflowState {
   addEvent: (e: GraphEngineEvent) => void;
   clearEvents: () => void;
   setOutputs: (o: Record<string, unknown> | null) => void;
+  selectedNodeId: string | null;
+  selectNode: (id: string | null) => void;
+  updateNodeData: (id: string, data: Record<string, unknown>) => void;
 }
 
 export const useWorkflowStore = create<WorkflowState>((set, get) => ({
@@ -59,4 +62,14 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   addEvent: (e) => set((s) => ({ events: [...s.events, e] })),
   clearEvents: () => set({ events: [] }),
   setOutputs: (o) => set({ outputs: o }),
+  selectedNodeId: null,
+
+  selectNode: (id) => set({ selectedNodeId: id }),
+
+  updateNodeData: (id, data) =>
+    set((s) => ({
+      nodes: s.nodes.map((n) =>
+        n.id === id ? { ...n, data: { ...n.data, ...data } } : n
+      ),
+    })),
 }));
