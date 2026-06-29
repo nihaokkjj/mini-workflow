@@ -4,6 +4,7 @@ import { StartNode } from "../nodes/start.node";
 import { EndNode } from "../nodes/end.node";
 import { LLMNode } from "../nodes/llm.node";
 import { IfElseNode } from "../nodes/if-else.node";
+import { HttpNode } from "../nodes/http.node";
 
 /** Map of node type string to its constructor */
 type NodeConstructor = new (
@@ -20,6 +21,7 @@ export class NodeFactory {
     this.register("end", EndNode);
     this.register("llm", LLMNode);
     this.register("if-else", IfElseNode);
+    this.register("http", HttpNode);
   }
 
   static register(type: string, ctor: NodeConstructor): void {
