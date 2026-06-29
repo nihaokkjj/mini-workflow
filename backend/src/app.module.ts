@@ -4,6 +4,7 @@ import dataSource from "./database/data-source";
 import { AppModule } from "./modules/app/app.module";
 import { WorkflowModule } from "./modules/workflow/workflow.module";
 import { RunModule } from "./modules/run/run.module";
+import { ConversationModule } from "./modules/conversation/conversation.module";
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { RunModule } from "./modules/run/run.module";
     AppModule,
     WorkflowModule,
     RunModule,
+    ConversationModule,
   ],
 })
 export class AppRootModule {}
