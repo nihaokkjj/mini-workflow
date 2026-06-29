@@ -21,7 +21,7 @@ test("TemplateNode resolves template and outputs result", async () => {
   assert.strictEqual(events[0].event, "node_start");
   const end = events.find((e) => e.event === "node_end");
   assert.ok(end);
-  assert.strictEqual(end.outputs.result, "Hello world!");
+  assert.strictEqual(end.outputs.text, "Hello world!");
 });
 
 test("TemplateNode handles template without variables", async () => {
@@ -38,7 +38,7 @@ test("TemplateNode handles template without variables", async () => {
 
   const end = events.find((e) => e.event === "node_end");
   assert.ok(end);
-  assert.strictEqual(end.outputs.result, "Static text");
+  assert.strictEqual(end.outputs.text, "Static text");
 });
 
 test("TemplateNode emits error on empty template", async () => {

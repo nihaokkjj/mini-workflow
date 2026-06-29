@@ -18,7 +18,7 @@ export class TemplateNode extends BaseNode {
 
     const resolved = this.resolveTemplate(rawTemplate);
 
-    const outputs: Record<string, unknown> = { result: resolved };
+    const outputs: Record<string, unknown> = { text: resolved };
     this.pool.setNodeOutput(nodeId, outputs);
     yield { event: "node_end", nodeId, outputs, timestamp: Date.now() };
   }
