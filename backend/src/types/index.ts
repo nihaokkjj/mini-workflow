@@ -71,4 +71,14 @@ export interface RunWorkflowDto {
 export interface CreateAppDto {
   name: string;
   description?: string;
+  mode?: "chat" | "workflow";
+}
+
+export interface CreateConversationDto {
+  appId: string;
+}
+
+export interface ChatRunDto {
+  workflowId: string;
+  inputs: Record<string, unknown>;
 }
