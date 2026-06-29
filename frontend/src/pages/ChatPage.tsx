@@ -8,7 +8,6 @@ import {
   getMessages,
   deleteConversation,
   startChatRun,
-  subscribeToRunStream,
 } from "../services/api";
 import type { AppDto, ConversationDto, MessageDto, GraphEngineEvent } from "../types";
 
@@ -81,37 +80,33 @@ export default function ChatPage() {
     setIsRunning(true);
     controllerRef.current?.abort();
 
-    try {
-      const { data: runData } = await startChatRun(conversationId, workflowId, { query });
-      controllerRef.current = subscribeToRunStream(
-        runData.runId,
-        (event: GraphEngineEvent) => {
-          if (event.event === "node_chunk") {
-            setStreaming((prev) => prev + event.text);
-          } else if (event.event === "graph_end") {
-            setStreaming((prev) => {
-              const outputs = event.outputs as Record<string, unknown>;
-              const text = String(outputs.answer ?? outputs.result ?? JSON.stringify(outputs));
-              return prev || text;
-            });
-          } else if (event.event === "error") {
-            setStreaming((prev) => prev + `\n[Error: ${event.error}]`);
-          }
-        },
-        () => {
-          setIsRunning(false);
-          loadMessages(conversationId!);
-          loadConversations();
-        },
-        (err) => {
-          setStreaming((prev) => prev + `\n[Error: ${err}]`);
-          setIsRunning(false);
-        },
-      );
-    } catch (err: any) {
-      setStreaming(`Error: ${err.message}`);
-      setIsRunning(false);
-    }
+    controllerRef.current = startChatRun(
+      conversationId,
+      workflowId,
+      { query },
+      (event: GraphEngineEvent) => {
+        if (event.event === "node_chunk") {
+          setStreaming((prev) => prev + event.text);
+        } else if (event.event === "graph_end") {
+          setStreaming((prev) => {
+            const outputs = event.outputs as Record<string, unknown>;
+            const text = String(outputs.answer ?? outputs.result ?? JSON.stringify(outputs));
+            return prev || text;
+          });
+        } else if (event.event === "error") {
+          setStreaming((prev) => prev + `\n[Error: ${event.error}]`);
+        }
+      },
+      () => {
+        setIsRunning(false);
+        loadMessages(conversationId!);
+        loadConversations();
+      },
+      (err) => {
+        setStreaming((prev) => prev + `\n[Error: ${err}]`);
+        setIsRunning(false);
+      },
+    );
   };
 
   const handleDelete = async (id: string) => {

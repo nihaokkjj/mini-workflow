@@ -71,6 +71,8 @@ export class ConversationController {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
+    let assistantContent: string | undefined;
+
     try {
       // Validate conversation exists
       const conversation = await this.convRepo.findOneBy({
@@ -120,18 +122,13 @@ export class ConversationController {
           `event: ${event.event}\ndata: ${JSON.stringify(event)}\n\n`,
         );
 
-        // On graph_end, derive assistant content from outputs and save
+        // On graph_end, capture assistant content for saving later
         if (event.event === "graph_end") {
           const outputs = event.outputs as Record<string, unknown>;
-          const assistantContent =
+          assistantContent =
             (outputs.answer as string) ??
             (outputs.result as string) ??
             JSON.stringify(outputs);
-          await this.convService.saveMessage(
-            conversationId,
-            "assistant",
-            assistantContent,
-          );
         }
       }
     } catch (err: unknown) {
@@ -141,6 +138,9 @@ export class ConversationController {
         `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, error: message, timestamp: Date.now() })}\n\n`,
       );
     } finally {
+      if (assistantContent) {
+        await this.convService.saveMessage(conversationId, "assistant", assistantContent);
+      }
       res.end();
     }
   }

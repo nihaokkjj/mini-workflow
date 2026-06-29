@@ -91,8 +91,62 @@ export const getMessages = (conversationId: string) =>
 
 export const deleteConversation = (id: string) => api.delete(`/conversations/${id}`);
 
-export const startChatRun = (
+export function startChatRun(
   conversationId: string,
   workflowId: string,
   inputs: Record<string, unknown>,
-) => api.post<RunDto>(`/conversations/${conversationId}/runs`, { workflowId, inputs });
+  onEvent: (event: GraphEngineEvent) => void,
+  onDone: () => void,
+  onError: (err: string) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`http://localhost:3001/api/conversations/${conversationId}/runs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ workflowId, inputs }),
+    signal: controller.signal,
+  })
+    .then(async (response) => {
+      if (!response.ok || !response.body) {
+        onError(`HTTP ${response.status}`);
+        return;
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          // Match both "event: <type>" and "data: <json>" lines
+          if (line.startsWith("data: ")) {
+            try {
+              const event: GraphEngineEvent = JSON.parse(line.slice(6));
+              onEvent(event);
+              if (event.event === "graph_end" || event.event === "error") {
+                onDone();
+                return;
+              }
+            } catch {
+              // Skip unparseable lines
+            }
+          }
+        }
+      }
+      onDone();
+    })
+    .catch((err) => {
+      if ((err as Error).name !== "AbortError") {
+        onError((err as Error).message);
+      }
+    });
+
+  return controller;
+}
