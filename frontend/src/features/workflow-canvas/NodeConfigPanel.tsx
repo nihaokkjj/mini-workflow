@@ -77,6 +77,97 @@ function IfElseConfig({ data, onChange }: { data: Record<string, unknown>; onCha
   );
 }
 
+function HttpConfig({ data, onChange }: { data: Record<string, unknown>; onChange: (d: Record<string, unknown>) => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Method</span>
+        <select
+          className="border border-slate-300 rounded-md p-2 text-sm"
+          value={(data.method as string) || "GET"}
+          onChange={(e) => onChange({ ...data, method: e.target.value })}
+        >
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+        </select>
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">URL</span>
+        <input
+          type="text"
+          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
+          placeholder="https://api.example.com/{{start.query}}"
+          value={(data.url as string) || ""}
+          onChange={(e) => onChange({ ...data, url: e.target.value })}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Headers (JSON)</span>
+        <textarea
+          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-20"
+          placeholder='{"Authorization": "Bearer {{token}}"}'
+          value={JSON.stringify(data.headers || {}, null, 2)}
+          onChange={(e) => {
+            try { onChange({ ...data, headers: JSON.parse(e.target.value) }); } catch { /* invalid JSON */ }
+          }}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Body</span>
+        <textarea
+          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-20"
+          value={(data.body as string) || ""}
+          onChange={(e) => onChange({ ...data, body: e.target.value })}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Timeout (ms)</span>
+        <input
+          type="number"
+          className="border border-slate-300 rounded-md p-2 text-sm"
+          value={(data.timeout as number) || 30000}
+          onChange={(e) => onChange({ ...data, timeout: Number(e.target.value) })}
+        />
+      </label>
+    </div>
+  );
+}
+
+function CodeConfig({ data, onChange }: { data: Record<string, unknown>; onChange: (d: Record<string, unknown>) => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">JavaScript Code</span>
+        <textarea
+          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-48"
+          placeholder="return $inputs.query.toUpperCase();"
+          value={(data.code as string) || ""}
+          onChange={(e) => onChange({ ...data, code: e.target.value })}
+        />
+      </label>
+      <p className="text-xs text-slate-400">
+        Use <code className="bg-slate-100 px-1">$inputs</code> to access mapped input variables.
+      </p>
+    </div>
+  );
+}
+
+function TemplateConfig({ data, onChange }: { data: Record<string, unknown>; onChange: (d: Record<string, unknown>) => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Template</span>
+        <textarea
+          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-32"
+          placeholder="Hello {{start.query}}!"
+          value={(data.template as string) || ""}
+          onChange={(e) => onChange({ ...data, template: e.target.value })}
+        />
+      </label>
+    </div>
+  );
+}
+
 function EndConfig({ data, onChange }: { data: Record<string, unknown>; onChange: (d: Record<string, unknown>) => void }) {
   return (
     <div className="flex flex-col gap-3">
@@ -103,9 +194,9 @@ const configRenderers: Record<NodeType, (data: Record<string, unknown>, onChange
   llm: (d, o) => <LLMConfig data={d} onChange={o} />,
   "if-else": (d, o) => <IfElseConfig data={d} onChange={o} />,
   end: (d, o) => <EndConfig data={d} onChange={o} />,
-  code: placeholderConfig,
-  http: placeholderConfig,
-  template: placeholderConfig,
+  http: (d, o) => <HttpConfig data={d} onChange={o} />,
+  code: (d, o) => <CodeConfig data={d} onChange={o} />,
+  template: (d, o) => <TemplateConfig data={d} onChange={o} />,
   iteration: placeholderConfig,
 };
 
