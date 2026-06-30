@@ -9,5 +9,6 @@ import { RunController } from "./run.controller";
   imports: [TypeOrmModule.forFeature([Run, Workflow])],
   controllers: [RunController],
   providers: [RunService],
+  exports: [RunService],
 })
 export class RunModule {}

@@ -43,6 +43,26 @@ export interface RunDto {
   runId: string;
 }
 
+export interface ConversationDto {
+  id: string;
+  appId: string;
+  createdAt: string;
+}
+
+export interface MessageDto {
+  id: string;
+  conversationId: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  nodeId?: string;
+  createdAt: string;
+}
+
+export interface ModelDto {
+  id: string;
+  name: string;
+}
+
 export type GraphEngineEvent =
   | { event: "node_start"; nodeId: string; nodeType: NodeType; timestamp: number }
   | { event: "node_chunk"; nodeId: string; text: string; timestamp: number }

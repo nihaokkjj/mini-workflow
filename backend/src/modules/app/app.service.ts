@@ -10,8 +10,8 @@ export class AppService {
     private readonly repo: Repository<App>,
   ) {}
 
-  async create(data: { name: string; description?: string }): Promise<App> {
-    const app = this.repo.create(data);
+  async create(data: { name: string; description?: string; mode?: "chat" | "workflow" }): Promise<App> {
+    const app = this.repo.create({ ...data, mode: data.mode ?? "workflow" });
     return this.repo.save(app);
   }
 

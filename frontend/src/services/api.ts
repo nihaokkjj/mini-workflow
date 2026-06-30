@@ -1,10 +1,11 @@
 import axios from "axios";
-import type { AppDto, WorkflowDto, Graph, RunDto, GraphEngineEvent } from "../types";
+import type { AppDto, WorkflowDto, Graph, RunDto, GraphEngineEvent, ConversationDto, MessageDto, ModelDto } from "../types";
 
 const api = axios.create({ baseURL: "http://localhost:3001/api" });
 
 // Apps
-export const createApp = (name: string) => api.post<AppDto>("/apps", { name });
+export const createApp = (name: string, mode: "chat" | "workflow" = "chat") =>
+  api.post<AppDto>("/apps", { name, mode });
 export const listApps = () => api.get<AppDto[]>("/apps");
 export const getApp = (id: string) => api.get<AppDto>(`/apps/${id}`);
 export const deleteApp = (id: string) => api.delete(`/apps/${id}`);
@@ -50,6 +51,81 @@ export function subscribeToRunStream(
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const event: GraphEngineEvent = JSON.parse(line.slice(6));
+              onEvent(event);
+              if (event.event === "graph_end" || event.event === "error") {
+                onDone();
+                return;
+              }
+            } catch {
+              // Skip unparseable lines
+            }
+          }
+        }
+      }
+      onDone();
+    })
+    .catch((err) => {
+      if ((err as Error).name !== "AbortError") {
+        onError((err as Error).message);
+      }
+    });
+
+  return controller;
+}
+
+// Models
+export const listModels = () => api.get<ModelDto[]>("/models");
+
+// Conversations
+export const createConversation = (appId: string) =>
+  api.post<ConversationDto>("/conversations", { appId });
+
+export const listConversations = (appId: string) =>
+  api.get<ConversationDto[]>(`/conversations?appId=${appId}`);
+
+export const getMessages = (conversationId: string) =>
+  api.get<MessageDto[]>(`/conversations/${conversationId}/messages`);
+
+export const deleteConversation = (id: string) => api.delete(`/conversations/${id}`);
+
+export function startChatRun(
+  conversationId: string,
+  workflowId: string,
+  inputs: Record<string, unknown>,
+  onEvent: (event: GraphEngineEvent) => void,
+  onDone: () => void,
+  onError: (err: string) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`http://localhost:3001/api/conversations/${conversationId}/runs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ workflowId, inputs }),
+    signal: controller.signal,
+  })
+    .then(async (response) => {
+      if (!response.ok || !response.body) {
+        onError(`HTTP ${response.status}`);
+        return;
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          // Match both "event: <type>" and "data: <json>" lines
           if (line.startsWith("data: ")) {
             try {
               const event: GraphEngineEvent = JSON.parse(line.slice(6));
