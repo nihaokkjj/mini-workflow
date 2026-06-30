@@ -21,7 +21,7 @@ Recommended settings:
 
 Environment variables:
 
-- `NODE_VERSION=22.16.0`
+- `NODE_VERSION=24.15.0`
 - `NODE_ENV=production`
 - `OPENAI_API_KEY=<your provider key>`
 - `OPENAI_BASE_URL=<your OpenAI-compatible base URL>`
@@ -52,4 +52,4 @@ The backend currently writes production data to `prod.db`. This is fine for a de
 
 ## Troubleshooting
 
-If Render reports a native build error for `better-sqlite3` or `isolated-vm`, trigger **Manual Deploy > Clear build cache & deploy** after these settings are in place. The deployment pins Node 22.16.0 and pnpm 9.15.4 so both native bindings build against the same V8 version. The first two build log lines should show Node `v22.x` and pnpm `9.15.4`.
+If Render reports a native build error for `better-sqlite3` or `isolated-vm`, trigger **Manual Deploy > Clear build cache & deploy** after these settings are in place. The deployment pins Node 24.15.0 and pnpm 9.15.4 so both native bindings build against the same V8 version. The first two build log lines should show Node `v24.x` and pnpm `9.15.4`.
