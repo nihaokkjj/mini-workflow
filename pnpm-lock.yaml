@@ -38,8 +38,8 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       isolated-vm:
-        specifier: ^7.0.0
-        version: 7.0.0
+        specifier: ^6.1.2
+        version: 6.1.2
       openai:
         specifier: ^4.70.0
         version: 4.104.0
@@ -1760,9 +1760,9 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  isolated-vm@7.0.0:
-    resolution: {integrity: sha512-TXlJp9kiSf4AEpkCgB4VIf2M+6MRW3SEzlZUXFmQ6QcRypOnENRvK6RoZuQt/dlLOnqyFGUoZELUfH4ucsG4iw==}
-    engines: {node: '>=26.0.0'}
+  isolated-vm@6.1.2:
+    resolution: {integrity: sha512-GGfsHqtlZiiurZaxB/3kY7LLAXR3sgzDul0fom4cSyBjx6ZbjpTrFWiH3z/nUfLJGJ8PIq9LQmQFiAxu24+I7A==}
+    engines: {node: '>=22.0.0'}
 
   iterare@1.2.1:
     resolution: {integrity: sha512-RKYVTCjAnRthyJes037NX/IiqeidgN1xc3j1RjFfECFp28A1GVwK9nA+i0rJPaHqSZwygLzRnFlzUuHFoWWy+Q==}
@@ -4454,7 +4454,7 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isolated-vm@7.0.0:
+  isolated-vm@6.1.2:
     dependencies:
       node-gyp-build: 4.8.4
 
