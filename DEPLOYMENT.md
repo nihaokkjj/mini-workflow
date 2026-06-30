@@ -16,12 +16,12 @@ Recommended settings:
 
 - Root Directory: leave empty
 - Runtime: Node
-- Build Command: `corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm install --frozen-lockfile && pnpm build:shared && pnpm build:backend`
+- Build Command: `node -v && corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm -v && pnpm install --frozen-lockfile && pnpm build:shared && pnpm build:backend`
 - Start Command: `pnpm --filter @mini-dify/backend start`
 
 Environment variables:
 
-- `NODE_VERSION=20`
+- `NODE_VERSION=20.19.5`
 - `NODE_ENV=production`
 - `OPENAI_API_KEY=<your provider key>`
 - `OPENAI_BASE_URL=<your OpenAI-compatible base URL>`
@@ -52,4 +52,4 @@ The backend currently writes production data to `prod.db`. This is fine for a de
 
 ## Troubleshooting
 
-If Render reports `Could not locate the bindings file` for `better-sqlite3`, trigger **Manual Deploy > Clear build cache & deploy** after these settings are in place. The deployment pins Node 20 and pnpm 9.15.4 so the native SQLite binding is built consistently.
+If Render reports `Could not locate the bindings file` for `better-sqlite3`, trigger **Manual Deploy > Clear build cache & deploy** after these settings are in place. The deployment pins Node 20.19.5 and pnpm 9.15.4 so the native SQLite binding is built consistently. The first two build log lines should show Node `v20.x` and pnpm `9.15.4`.
