@@ -1,7 +1,10 @@
 import axios from "axios";
 import type { AppDto, WorkflowDto, Graph, RunDto, GraphEngineEvent, ConversationDto, MessageDto, ModelDto } from "../types";
 
-const api = axios.create({ baseURL: "http://localhost:3001/api" });
+// Keep the local default for development while allowing Vercel to point at the Render API.
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api").replace(/\/$/, "");
+
+const api = axios.create({ baseURL: API_BASE_URL });
 
 // Apps
 export const createApp = (name: string, mode: "chat" | "workflow" = "chat") =>
@@ -32,7 +35,7 @@ export function subscribeToRunStream(
 ): AbortController {
   const controller = new AbortController();
 
-  fetch(`http://localhost:3001/api/runs/${runId}/stream`, {
+  fetch(`${API_BASE_URL}/runs/${runId}/stream`, {
     signal: controller.signal,
   })
     .then(async (response) => {
@@ -104,7 +107,7 @@ export function startChatRun(
 ): AbortController {
   const controller = new AbortController();
 
-  fetch(`http://localhost:3001/api/conversations/${conversationId}/runs`, {
+  fetch(`${API_BASE_URL}/conversations/${conversationId}/runs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ workflowId, inputs }),

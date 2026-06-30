@@ -11,10 +11,19 @@ import { AppRootModule } from "./app.module";
 async function bootstrap() {
   const app = await NestFactory.create(AppRootModule);
 
-  // CORS for frontend dev server — allow any localhost port in dev
+  const corsOrigins = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    process.env.FRONTEND_ORIGIN,
+    ...(process.env.CORS_ORIGINS?.split(",") ?? []),
+  ]
+    .map((origin) => origin?.trim())
+    .filter((origin): origin is string => Boolean(origin));
+
+  // Render/Vercel deployment needs explicit production origins while keeping local dev simple.
   app.enableCors({
     origin: (origin, cb) => {
-      if (!origin || origin.startsWith("http://localhost:")) {
+      if (!origin || origin.startsWith("http://localhost:") || corsOrigins.includes(origin)) {
         cb(null, true);
       } else {
         cb(new Error(`CORS blocked origin: ${origin}`));

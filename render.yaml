@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: mini-dify-backend
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm install --frozen-lockfile && pnpm build:shared && pnpm build:backend
+    startCommand: pnpm --filter @mini-dify/backend start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: FRONTEND_ORIGIN
+        sync: false

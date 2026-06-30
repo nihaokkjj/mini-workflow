@@ -2,11 +2,15 @@
   "name": "@mini-dify/backend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "postinstall": "npm rebuild better-sqlite3"
   },
   "dependencies": {
     "@mini-dify/shared": "workspace:*",
