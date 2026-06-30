@@ -14,7 +14,7 @@ export class Run {
   workflow: Workflow;
 
   @Column({ default: "pending" })
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "failed" | "canceled" | "timeout";
 
   @Column("simple-json", { nullable: true })
   inputs: Record<string, unknown>;

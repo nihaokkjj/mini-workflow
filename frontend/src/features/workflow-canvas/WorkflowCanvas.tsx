@@ -25,7 +25,7 @@ import TemplateNodeComponent from "./nodes/TemplateNodeComponent";
 import { NodePalette } from "./palette/NodePalette";
 import { NodeConfigPanel } from "./NodeConfigPanel";
 import { useWorkflowStore } from "../../stores/workflow.store";
-import { saveWorkflow, startRun, subscribeToRunStream } from "../../services/api";
+import { cancelRun, saveWorkflow, startRun, subscribeToRunStream } from "../../services/api";
 import type { NodeType, GraphEngineEvent } from "../../types";
 
 const nodeTypes = {
@@ -44,6 +44,14 @@ function nextId(type: NodeType) {
   return `${type}-${nodeIdCounter}`;
 }
 
+function syncNodeCounter(nodes: Array<{ id: string }>) {
+  const maxSeen = nodes.reduce((max, node) => {
+    const suffix = Number(node.id.match(/-(\d+)$/)?.[1] ?? 0);
+    return Number.isFinite(suffix) ? Math.max(max, suffix) : max;
+  }, nodeIdCounter);
+  nodeIdCounter = maxSeen;
+}
+
 function WorkflowCanvasInner() {
   const store = useWorkflowStore();
   const [rfNodes, setRfNodes, onNodesChangeRf] = useNodesState<Node>([]);
@@ -51,7 +59,14 @@ function WorkflowCanvasInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [output, setOutput] = useState("");
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
   const streamControllerRef = useRef<AbortController | null>(null);
+
+  const showToast = useCallback((tone: "success" | "error" | "info", text: string) => {
+    setToast({ tone, text });
+    window.setTimeout(() => setToast(null), 2600);
+  }, []);
 
   // Cleanup SSE stream on unmount
   useEffect(() => {
@@ -60,13 +75,20 @@ function WorkflowCanvasInner() {
     };
   }, []);
 
+  useEffect(() => {
+    syncNodeCounter(store.nodes);
+    setRfNodes(
+      store.nodes.map((node) => ({
+        ...node,
+        data: node.data ?? {},
+      })),
+    );
+    setRfEdges(store.edges.map((edge) => ({ ...edge })));
+  }, [store.nodes, store.edges, setRfNodes, setRfEdges]);
+
   const onConnect = useCallback(
     (conn: Connection) => {
-      store.onConnect({
-        ...conn,
-        sourceHandle: conn.sourceHandle ?? undefined,
-        targetHandle: conn.targetHandle ?? undefined,
-      });
+      store.onConnect(conn);
       setRfEdges((eds) => [...eds, { ...conn, id: `edge-${Date.now()}` } as Edge]);
     },
     [store, setRfEdges],
@@ -140,7 +162,7 @@ function WorkflowCanvasInner() {
   const handleSave = async () => {
     if (!store.appId) return;
     try {
-      await saveWorkflow(store.appId, {
+      const { data } = await saveWorkflow(store.appId, {
         nodes: store.nodes.map((n) => ({
           id: n.id,
           type: n.type,
@@ -150,9 +172,10 @@ function WorkflowCanvasInner() {
         })),
         edges: store.edges,
       });
-      alert("Workflow saved!");
+      store.setApp(store.appId, data.id);
+      showToast("success", "Workflow saved");
     } catch {
-      alert("Save failed.");
+      showToast("error", "Save failed");
     }
   };
 
@@ -166,6 +189,7 @@ function WorkflowCanvasInner() {
 
     try {
       const { data: runData } = await startRun(store.workflowId, { input: "Hello" });
+      setCurrentRunId(runData.runId);
 
       const controller = subscribeToRunStream(
         runData.runId,
@@ -182,21 +206,55 @@ function WorkflowCanvasInner() {
           } else if (event.event === "graph_end") {
             setOutput(JSON.stringify(event.outputs, null, 2));
             store.setRunning(false);
+            setCurrentRunId(null);
+            showToast("success", "Run completed");
           } else if (event.event === "error") {
-            setOutput(`Error: ${event.error}`);
+            const nodePrefix = event.nodeId ? `${event.nodeId}: ` : "";
+            setOutput(`Error: ${nodePrefix}${event.message}`);
             store.setRunning(false);
+            store.setExecutingNode(null);
+            setCurrentRunId(null);
+            showToast("error", event.message);
           }
         },
-        () => store.setRunning(false),
+        () => {
+          store.setRunning(false);
+          store.setExecutingNode(null);
+          setCurrentRunId(null);
+        },
         (err) => {
           setOutput(`Error: ${err}`);
           store.setRunning(false);
+          store.setExecutingNode(null);
+          setCurrentRunId(null);
+          showToast("error", err);
         },
       );
       streamControllerRef.current = controller;
     } catch (err: any) {
       setOutput(`Error: ${err.message}`);
       store.setRunning(false);
+      store.setExecutingNode(null);
+      setCurrentRunId(null);
+      showToast("error", err.message);
+    }
+  };
+
+  const handleStop = async () => {
+    const runId = currentRunId;
+    streamControllerRef.current?.abort();
+    streamControllerRef.current = null;
+    store.setRunning(false);
+    store.setExecutingNode(null);
+    setCurrentRunId(null);
+
+    if (!runId) return;
+    try {
+      await cancelRun(runId);
+      setOutput((prev) => `${prev}${prev ? "\n" : ""}Run stopped.`);
+      showToast("info", "Run stopped");
+    } catch (err: any) {
+      showToast("error", err.message ?? "Failed to stop run");
     }
   };
 
@@ -230,6 +288,14 @@ function WorkflowCanvasInner() {
           >
             {store.isRunning ? "Running..." : "Run"}
           </button>
+          {store.isRunning && (
+            <button
+              onClick={handleStop}
+              className="px-4 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+            >
+              Stop
+            </button>
+          )}
           {store.executingNodeId && (
             <span className="text-sm text-slate-500">
               Executing: <span className="font-mono text-orange-600">{store.executingNodeId}</span>
@@ -238,7 +304,15 @@ function WorkflowCanvasInner() {
         </div>
 
         {/* Canvas */}
-        <div ref={reactFlowWrapper} className="flex-1" onDragOver={onDragOver} onDrop={onDrop}>
+        <div ref={reactFlowWrapper} className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
+          {rfNodes.length === 0 && (
+            <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+              <div className="rounded-lg border border-dashed border-slate-300 bg-white/85 px-5 py-4 text-center shadow-sm">
+                <div className="text-sm font-medium text-slate-700">Drag nodes from the left panel</div>
+                <div className="text-xs text-slate-500 mt-1">Start with Start, add work nodes, then connect to End.</div>
+              </div>
+            </div>
+          )}
           <ReactFlow
             nodes={highlightedNodes}
             edges={rfEdges}
@@ -249,6 +323,8 @@ function WorkflowCanvasInner() {
             onPaneClick={onCanvasClick}
             onInit={onInit}
             nodeTypes={nodeTypes}
+            snapToGrid
+            snapGrid={[16, 16]}
             fitView
           >
             <Background />
@@ -265,6 +341,19 @@ function WorkflowCanvasInner() {
         )}
       </div>
       <NodeConfigPanel />
+      {toast && (
+        <div
+          className={`fixed right-4 top-4 z-50 rounded-lg px-4 py-2 text-sm shadow-lg ${
+            toast.tone === "error"
+              ? "bg-red-600 text-white"
+              : toast.tone === "success"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-800 text-white"
+          }`}
+        >
+          {toast.text}
+        </div>
+      )}
     </div>
   );
 }

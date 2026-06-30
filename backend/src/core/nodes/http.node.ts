@@ -14,7 +14,7 @@ export class HttpNode extends BaseNode {
     const timeout = (data.timeout as number) || 30000;
 
     if (!url) {
-      yield { event: "error", nodeId, error: "HTTP node url is empty", timestamp: Date.now() };
+      yield { event: "error", nodeId, nodeType: "http", message: "HTTP node url is empty", timestamp: Date.now() };
       return;
     }
 
@@ -28,6 +28,8 @@ export class HttpNode extends BaseNode {
 
     try {
       const controller = new AbortController();
+      const abortFromRun = () => controller.abort(this.context.abortSignal?.reason);
+      this.context.abortSignal?.addEventListener("abort", abortFromRun, { once: true });
       const timer = setTimeout(() => controller.abort(), timeout);
       const res = await fetch(url, {
         method,
@@ -36,6 +38,7 @@ export class HttpNode extends BaseNode {
         signal: controller.signal,
       });
       clearTimeout(timer);
+      this.context.abortSignal?.removeEventListener("abort", abortFromRun);
 
       const bodyText = await res.text();
       let json: unknown | undefined;
@@ -55,7 +58,13 @@ export class HttpNode extends BaseNode {
       this.pool.setNodeOutput(nodeId, outputs);
       yield { event: "node_end", nodeId, outputs, timestamp: Date.now() };
     } catch (err: any) {
-      yield { event: "error", nodeId, error: `HTTP request failed: ${err.message}`, timestamp: Date.now() };
+      const reason = this.context.abortSignal?.aborted
+        ? this.context.abortSignal.reason
+        : undefined;
+      const message = reason instanceof Error
+        ? reason.message
+        : `HTTP request failed: ${err.message}`;
+      yield { event: "error", nodeId, nodeType: "http", message, timestamp: Date.now() };
     }
   }
 }

@@ -80,7 +80,7 @@ export class ConversationController {
       });
       if (!conversation) {
         res.write(
-          `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, error: "Conversation not found", timestamp: Date.now() })}\n\n`,
+          `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message: "Conversation not found", timestamp: Date.now() })}\n\n`,
         );
         res.end();
         return;
@@ -92,14 +92,14 @@ export class ConversationController {
       });
       if (!workflow) {
         res.write(
-          `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, error: "Workflow not found", timestamp: Date.now() })}\n\n`,
+          `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message: "Workflow not found", timestamp: Date.now() })}\n\n`,
         );
         res.end();
         return;
       }
       if (workflow.appId !== conversation.appId) {
         res.write(
-          `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, error: "Workflow does not belong to the same app as the conversation", timestamp: Date.now() })}\n\n`,
+          `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message: "Workflow does not belong to the same app as the conversation", timestamp: Date.now() })}\n\n`,
         );
         res.end();
         return;
@@ -135,7 +135,7 @@ export class ConversationController {
       const message =
         err instanceof Error ? err.message : "Unknown execution error";
       res.write(
-        `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, error: message, timestamp: Date.now() })}\n\n`,
+        `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message, timestamp: Date.now() })}\n\n`,
       );
     } finally {
       if (assistantContent) {

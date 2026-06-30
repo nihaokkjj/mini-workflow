@@ -19,7 +19,7 @@ export class IfElseNode extends BaseNode {
     try {
       result = this.evaluateCondition(resolved);
     } catch (err: any) {
-      yield { event: "error", nodeId, error: `Condition evaluation failed: ${err.message}`, timestamp: Date.now() };
+      yield { event: "error", nodeId, nodeType: "if-else", message: `Condition evaluation failed: ${err.message}`, timestamp: Date.now() };
       return;
     }
 

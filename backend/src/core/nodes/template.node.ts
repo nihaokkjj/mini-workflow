@@ -12,7 +12,7 @@ export class TemplateNode extends BaseNode {
     const rawTemplate = (this.config.data.template as string) || "";
 
     if (!rawTemplate) {
-      yield { event: "error", nodeId, error: "Template node template is empty", timestamp: Date.now() };
+      yield { event: "error", nodeId, nodeType: "template", message: "Template node template is empty", timestamp: Date.now() };
       return;
     }
 

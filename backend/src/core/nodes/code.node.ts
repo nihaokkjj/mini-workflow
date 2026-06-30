@@ -13,7 +13,7 @@ export class CodeNode extends BaseNode {
     const userCode = (this.config.data.code as string) || "";
 
     if (!userCode) {
-      yield { event: "error", nodeId, error: "Code node code is empty", timestamp: Date.now() };
+      yield { event: "error", nodeId, nodeType: "code", message: "Code node code is empty", timestamp: Date.now() };
       return;
     }
 
@@ -47,7 +47,7 @@ export class CodeNode extends BaseNode {
       this.pool.setNodeOutput(nodeId, outputs);
       yield { event: "node_end", nodeId, outputs, timestamp: Date.now() };
     } catch (err: any) {
-      yield { event: "error", nodeId, error: `Code execution failed: ${err.message}`, timestamp: Date.now() };
+      yield { event: "error", nodeId, nodeType: "code", message: `Code execution failed: ${err.message}`, timestamp: Date.now() };
     } finally {
       // Clean up the isolate to free memory
       isolate.dispose();

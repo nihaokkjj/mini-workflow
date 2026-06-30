@@ -1,5 +1,6 @@
 import { useWorkflowStore } from "../../stores/workflow.store";
 import type { NodeType } from "../../types";
+import type { ReactNode } from "react";
 
 function StartConfig({ data, onChange }: { data: Record<string, unknown>; onChange: (d: Record<string, unknown>) => void }) {
   return (
@@ -189,7 +190,7 @@ function EndConfig({ data, onChange }: { data: Record<string, unknown>; onChange
 
 const placeholderConfig = () => <p className="text-sm text-slate-500">Configuration coming soon</p>;
 
-const configRenderers: Record<NodeType, (data: Record<string, unknown>, onChange: (d: Record<string, unknown>) => void) => JSX.Element> = {
+const configRenderers: Record<NodeType, (data: Record<string, unknown>, onChange: (d: Record<string, unknown>) => void) => ReactNode> = {
   start: (d, o) => <StartConfig data={d} onChange={o} />,
   llm: (d, o) => <LLMConfig data={d} onChange={o} />,
   "if-else": (d, o) => <IfElseConfig data={d} onChange={o} />,

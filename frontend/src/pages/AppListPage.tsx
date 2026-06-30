@@ -7,13 +7,24 @@ export default function AppListPage() {
   const [apps, setApps] = useState<AppDto[]>([]);
   const [name, setName] = useState("");
   const [toDelete, setToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const showToast = (text: string) => {
+    setToast(text);
+    window.setTimeout(() => setToast(null), 2600);
+  };
 
   const load = async () => {
     try {
       const { data } = await listApps();
       setApps(data);
-    } catch { /* offline */ }
+    } catch {
+      showToast("Failed to load apps");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -23,7 +34,9 @@ export default function AppListPage() {
     try {
       const { data } = await createApp(name);
       navigate(`/app/${data.id}/chat`);
-    } catch { alert("Failed to create app"); }
+    } catch {
+      showToast("Failed to create app");
+    }
   };
 
   const confirmDelete = async () => {
@@ -32,7 +45,9 @@ export default function AppListPage() {
       await deleteApp(toDelete);
       setToDelete(null);
       load();
-    } catch { alert("Failed to delete"); }
+    } catch {
+      showToast("Failed to delete app");
+    }
   };
 
   return (
@@ -55,7 +70,23 @@ export default function AppListPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse">
+              <div className="h-4 w-2/3 bg-slate-200 rounded mb-3" />
+              <div className="h-3 w-1/3 bg-slate-100 rounded mb-8" />
+              <div className="flex gap-2">
+                <div className="h-8 flex-1 bg-slate-100 rounded-lg" />
+                <div className="h-8 flex-1 bg-slate-100 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {apps.map((app) => (
           <div
             key={app.id}
@@ -95,9 +126,10 @@ export default function AppListPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
-      {apps.length === 0 && (
+      {!isLoading && apps.length === 0 && (
         <div className="text-center text-slate-400 py-12">No apps yet. Create one above.</div>
       )}
 
@@ -111,6 +143,12 @@ export default function AppListPage() {
               <button onClick={confirmDelete} className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed right-4 top-4 z-50 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+          {toast}
         </div>
       )}
     </div>

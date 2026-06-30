@@ -14,11 +14,14 @@ export const deleteApp = (id: string) => api.delete(`/apps/${id}`);
 export const saveWorkflow = (appId: string, graph: Graph) =>
   api.put<WorkflowDto>(`/workflows/by-app/${appId}`, { graph });
 export const getWorkflowByApp = (appId: string) =>
-  api.get<WorkflowDto>(`/workflows/by-app/${appId}`);
+  api.get<WorkflowDto | null>(`/workflows/by-app/${appId}`);
 
 // Runs
 export const startRun = (workflowId: string, inputs: Record<string, unknown>) =>
   api.post<RunDto>("/runs", { workflowId, inputs });
+
+export const cancelRun = (runId: string) =>
+  api.post<{ canceled: boolean }>(`/runs/${runId}/cancel`);
 
 /** Subscribe to SSE stream for a run, calling onEvent for each event */
 export function subscribeToRunStream(
@@ -130,16 +133,15 @@ export function startChatRun(
             try {
               const event: GraphEngineEvent = JSON.parse(line.slice(6));
               onEvent(event);
-              if (event.event === "graph_end" || event.event === "error") {
-                onDone();
-                return;
-              }
             } catch {
               // Skip unparseable lines
             }
           }
         }
       }
+      // Wait until the SSE connection is fully closed before declaring done.
+      // This ensures the server has finished its finally block (e.g. saving
+      // the assistant message) before the client reloads conversation state.
       onDone();
     })
     .catch((err) => {

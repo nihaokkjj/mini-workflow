@@ -64,7 +64,7 @@ test("CodeNode emits error when code is empty", async () => {
 
   const err = events.find((e) => e.event === "error");
   assert.ok(err);
-  assert.ok((err.error as string).includes("empty"));
+  assert.ok((err.message as string).includes("empty"));
 });
 
 test("CodeNode emits error on runtime exception", async () => {
@@ -81,5 +81,5 @@ test("CodeNode emits error on runtime exception", async () => {
 
   const err = events.find((e) => e.event === "error");
   assert.ok(err);
-  assert.ok((err.error as string).includes("something went wrong"));
+  assert.ok((err.message as string).includes("something went wrong"));
 });

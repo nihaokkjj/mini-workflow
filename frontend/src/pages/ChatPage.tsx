@@ -22,8 +22,14 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
   const [isRunning, setIsRunning] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const showToast = (text: string) => {
+    setToast(text);
+    window.setTimeout(() => setToast(null), 2600);
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +39,7 @@ export default function ChatPage() {
     if (!appId) return;
     getApp(appId).then(({ data }) => setApp(data)).catch(() => navigate("/"));
     getWorkflowByApp(appId)
-      .then(({ data }) => setWorkflowId(data.id))
+      .then(({ data }) => setWorkflowId(data?.id ?? null))
       .catch(() => setWorkflowId(null));
     loadConversations();
   }, [appId, navigate]);
@@ -69,7 +75,7 @@ export default function ChatPage() {
         setSelectedId(conversationId);
         setConversations((prev) => [data, ...prev]);
       } catch {
-        alert("Failed to create conversation");
+        showToast("Failed to create conversation");
         return;
       }
     }
@@ -94,11 +100,12 @@ export default function ChatPage() {
             return prev || text;
           });
         } else if (event.event === "error") {
-          setStreaming((prev) => prev + `\n[Error: ${event.error}]`);
+          setStreaming((prev) => prev + `\n[Error: ${event.message}]`);
         }
       },
       () => {
         setIsRunning(false);
+        setStreaming("");
         loadMessages(conversationId!);
         loadConversations();
       },
@@ -116,7 +123,7 @@ export default function ChatPage() {
       if (selectedId === id) setSelectedId(null);
       loadConversations();
     } catch {
-      alert("Failed to delete conversation");
+      showToast("Failed to delete conversation");
     }
   };
 
@@ -189,6 +196,11 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+      {toast && (
+        <div className="fixed right-4 top-4 z-50 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

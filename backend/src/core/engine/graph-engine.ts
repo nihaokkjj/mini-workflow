@@ -12,13 +12,15 @@ export class GraphEngine {
   private context: ExecutionContext;
   private maxSteps: number;
   private maxTimeMs: number;
+  private abortSignal?: AbortSignal;
 
-  constructor(graph: Graph, context: ExecutionContext, opts?: { maxSteps?: number; maxTimeMs?: number }) {
+  constructor(graph: Graph, context: ExecutionContext, opts?: { maxSteps?: number; maxTimeMs?: number; abortSignal?: AbortSignal }) {
     this.graph = graph;
     this.pool = new VariablePool();
     this.context = context;
     this.maxSteps = opts?.maxSteps ?? 50;
     this.maxTimeMs = opts?.maxTimeMs ?? 30000;
+    this.abortSignal = opts?.abortSignal ?? context.abortSignal;
   }
 
   private node(id: string) {
@@ -144,11 +146,19 @@ export class GraphEngine {
     return visited;
   }
 
+  private abortMessage(): string | null {
+    if (!this.abortSignal?.aborted) return null;
+    const reason = this.abortSignal.reason;
+    if (reason instanceof Error) return reason.message;
+    if (typeof reason === "string") return reason;
+    return "Run was canceled";
+  }
+
   async *run(): AsyncGenerator<GraphEngineEvent> {
     // Validate before execution
     const validationError = this.validate();
     if (validationError) {
-      yield { event: "error", nodeId: null, error: validationError, timestamp: Date.now() };
+      yield { event: "error", nodeId: null, nodeType: null, message: validationError, timestamp: Date.now() };
       return;
     }
 
@@ -158,14 +168,20 @@ export class GraphEngine {
     const startTime = Date.now();
 
     for (const nodeId of order) {
+      const abortMessage = this.abortMessage();
+      if (abortMessage) {
+        yield { event: "error", nodeId: null, nodeType: null, message: abortMessage, timestamp: Date.now() };
+        return;
+      }
+
       // Execution limits
       stepCount++;
       if (stepCount > this.maxSteps) {
-        yield { event: "error", nodeId: null, error: `Execution limit reached: max ${this.maxSteps} steps`, timestamp: Date.now() };
+        yield { event: "error", nodeId: null, nodeType: null, message: `Execution limit reached: max ${this.maxSteps} steps`, timestamp: Date.now() };
         return;
       }
       if (Date.now() - startTime > this.maxTimeMs) {
-        yield { event: "error", nodeId: null, error: `Execution timeout after ${this.maxTimeMs}ms`, timestamp: Date.now() };
+        yield { event: "error", nodeId: null, nodeType: null, message: `Execution timeout after ${this.maxTimeMs}ms`, timestamp: Date.now() };
         return;
       }
 
@@ -183,14 +199,22 @@ export class GraphEngine {
           return;
         }
         yield event;
+
+        const nodeAbortMessage = this.abortMessage();
+        if (nodeAbortMessage) {
+          yield { event: "error", nodeId, nodeType: config.type, message: nodeAbortMessage, timestamp: Date.now() };
+          return;
+        }
       }
 
-      // After branch node execution: mark the entire inactive subgraph as skipped
+      // After branch node execution: mark only nodes reachable exclusively from
+      // inactive branches. Shared downstream nodes, such as a merged End node,
+      // must still run when the active branch reaches them.
       const nodeConfig = this.node(nodeId);
       if (nodeConfig?.type === "if-else") {
         const sourceOutputs = this.pool.getNodeOutput(nodeId);
         if (sourceOutputs?.branch) {
-          // Find all edges from this node that are NOT on the taken branch
+          const activeTargets = this.getActiveTargets(nodeId);
           const inactiveTargets = new Set<string>();
           for (const edge of this.graph.edges) {
             if (edge.source !== nodeId) continue;
@@ -198,10 +222,12 @@ export class GraphEngine {
               inactiveTargets.add(edge.target);
             }
           }
-          // Mark the entire subgraph reachable from inactive targets as skipped
+
           if (inactiveTargets.size > 0) {
             const inactiveSubgraph = this.reachable(inactiveTargets);
+            const activeSubgraph = this.reachable(activeTargets);
             for (const skippedId of inactiveSubgraph) {
+              if (activeSubgraph.has(skippedId)) continue;
               skipped.add(skippedId);
               yield { event: "node_skipped", nodeId: skippedId, reason: "Branch not taken", timestamp: Date.now() };
             }

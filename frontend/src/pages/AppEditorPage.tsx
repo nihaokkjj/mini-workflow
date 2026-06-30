@@ -9,7 +9,9 @@ export default function AppEditorPage() {
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
   const [app, setApp] = useState<AppDto | null>(null);
-  const store = useWorkflowStore();
+  const [workflowLoading, setWorkflowLoading] = useState(true);
+  const setWorkflowApp = useWorkflowStore((s) => s.setApp);
+  const loadGraph = useWorkflowStore((s) => s.loadGraph);
 
   useEffect(() => {
     if (!appId) return;
@@ -19,14 +21,21 @@ export default function AppEditorPage() {
 
     getWorkflowByApp(appId)
       .then(({ data }) => {
-        store.setApp(appId, data.id);
-        store.loadGraph(data.graph.nodes, data.graph.edges);
+        if (!data) {
+          setWorkflowApp(appId, "");
+          loadGraph([], []);
+          return;
+        }
+        setWorkflowApp(appId, data.id);
+        loadGraph(data.graph.nodes, data.graph.edges);
       })
       .catch(() => {
         // No workflow yet — start empty
-        store.setApp(appId, "");
-      });
-  }, [appId, navigate, store]);
+        setWorkflowApp(appId, "");
+        loadGraph([], []);
+      })
+      .finally(() => setWorkflowLoading(false));
+  }, [appId, navigate, setWorkflowApp, loadGraph]);
 
   return (
     <div className="h-full flex flex-col">
@@ -42,7 +51,14 @@ export default function AppEditorPage() {
         </span>
       </div>
       <div className="flex-1">
-        <WorkflowCanvas />
+        {workflowLoading ? (
+          <div className="h-full flex items-center justify-center text-sm text-slate-500">
+            <div className="h-5 w-5 mr-3 rounded-full border-2 border-slate-300 border-t-blue-600 animate-spin" />
+            Loading workflow...
+          </div>
+        ) : (
+          <WorkflowCanvas />
+        )}
       </div>
     </div>
   );

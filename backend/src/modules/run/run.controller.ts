@@ -20,6 +20,12 @@ export class RunController {
     return { runId: run.id };
   }
 
+  @Post(":runId/cancel")
+  async cancel(@Param("runId") runId: string) {
+    const canceled = await this.service.cancelRun(runId);
+    return { canceled };
+  }
+
   @Get(":runId/stream")
   async stream(@Param("runId") runId: string, @Res() res: Response) {
     res.setHeader("Content-Type", "text/event-stream");
@@ -30,7 +36,7 @@ export class RunController {
 
     const run = await this.runRepo.findOne({ where: { id: runId } });
     if (!run) {
-      res.write(`event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, error: "Run not found", timestamp: Date.now() })}\n\n`);
+      res.write(`event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message: "Run not found", timestamp: Date.now() })}\n\n`);
       res.end();
       return;
     }
@@ -45,7 +51,7 @@ export class RunController {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown execution error";
-      res.write(`event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, error: message, timestamp: Date.now() })}\n\n`);
+      res.write(`event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message, timestamp: Date.now() })}\n\n`);
     } finally {
       res.end();
     }

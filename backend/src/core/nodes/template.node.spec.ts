@@ -55,5 +55,5 @@ test("TemplateNode emits error on empty template", async () => {
 
   const err = events.find((e) => e.event === "error");
   assert.ok(err);
-  assert.ok((err.error as string).includes("empty"));
+  assert.ok((err.message as string).includes("empty"));
 });

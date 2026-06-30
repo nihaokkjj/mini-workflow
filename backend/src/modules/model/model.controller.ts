@@ -6,9 +6,9 @@ interface ModelDto {
 }
 
 const DEFAULT_MODELS: ModelDto[] = [
-  { id: "gpt-4o-mini", name: "gpt-4o-mini" },
-  { id: "gpt-4o", name: "gpt-4o" },
-  { id: "gpt-3.5-turbo", name: "gpt-3.5-turbo" },
+  // { id: "gpt-4o-mini", name: "gpt-4o-mini" },
+  // { id: "gpt-4o", name: "gpt-4o" },
+  // { id: "gpt-3.5-turbo", name: "gpt-3.5-turbo" },
   { id: "kimi-latest", name: "kimi-latest" },
 ];
 

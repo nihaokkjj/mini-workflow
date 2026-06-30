@@ -44,6 +44,7 @@ export interface ExecutionContext {
   appId: string;
   workflowId: string;
   userId: string;
+  abortSignal?: AbortSignal;
 }
 
 // ==================== SSE Event Types ====================
@@ -54,7 +55,7 @@ export type GraphEngineEvent =
   | { event: "node_end"; nodeId: string; outputs: Record<string, unknown>; timestamp: number }
   | { event: "node_skipped"; nodeId: string; reason: string; timestamp: number }
   | { event: "graph_end"; outputs: Record<string, unknown>; timestamp: number }
-  | { event: "error"; nodeId: string | null; error: string; timestamp: number };
+  | { event: "error"; nodeId: string | null; nodeType: NodeType | null; message: string; timestamp: number };
 
 // ==================== DTOs ====================
 
