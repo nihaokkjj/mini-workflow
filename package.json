@@ -5,7 +5,7 @@
   "description": "Mini version of Dify - visual LLM workflow builder",
   "packageManager": "pnpm@9.15.4",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "scripts": {
     "dev:backend": "pnpm --filter @mini-dify/backend dev",
