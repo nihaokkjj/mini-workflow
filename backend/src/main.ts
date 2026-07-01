@@ -6,10 +6,12 @@ config({ path: resolve(__dirname, "..", ".env") });
 
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
+import { Logger } from "nestjs-pino";
 import { AppRootModule } from "./app.module";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppRootModule);
+  const app = await NestFactory.create(AppRootModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   const corsOrigins = [
     "http://localhost:5173",
@@ -34,7 +36,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
-  console.log(`Mini-Dify backend running on http://localhost:${port}`);
+  app.get(Logger).log(`Mini-Dify backend running on http://localhost:${port}`);
 }
 
 bootstrap();
