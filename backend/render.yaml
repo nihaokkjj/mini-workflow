@@ -1,0 +1,28 @@
+# Exported from Render on 2026-07-01T03:07:34Z
+version: "1"
+projects:
+- name: My project
+  environments:
+  - name: Production
+    services:
+    - type: web
+      name: mini-workflow
+      runtime: node
+      repo: https://github.com/nihaokkjj/mini-workflow
+      plan: free
+      envVars:
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: NODE_VERSION
+        sync: false
+      - key: NODE_ENV
+        sync: false
+      - key: OPENAI_BASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      region: oregon
+      buildCommand: pnpm install --frozen-lockfile; pnpm run build
+      startCommand: pnpm run start
+      autoDeployTrigger: commit
+      rootDir: backend
