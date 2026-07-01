@@ -13,6 +13,9 @@ importers:
       '@mini-dify/shared':
         specifier: workspace:*
         version: link:../shared
+      '@nestjs/cli':
+        specifier: ^10.4.9
+        version: 10.4.9
       '@nestjs/common':
         specifier: ^10.4.0
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -56,9 +59,6 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0
     devDependencies:
-      '@nestjs/cli':
-        specifier: ^10.4.0
-        version: 10.4.9
       '@nestjs/schematics':
         specifier: ^10.1.0
         version: 10.2.3(chokidar@3.6.0)(typescript@5.9.3)
