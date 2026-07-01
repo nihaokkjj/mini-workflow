@@ -2,6 +2,48 @@ import { useWorkflowStore } from "../../stores/workflow.store";
 import type { NodeType } from "../../types";
 import type { ReactNode } from "react";
 
+interface SupportedModelOption {
+  id: string;
+  name: string;
+  provider: string;
+  baseURL: string;
+}
+
+// Keep the model catalog in the client so the workflow builder shows supported
+// providers directly instead of inheriting a server-specific env configuration.
+const SUPPORTED_LLM_MODELS: SupportedModelOption[] = [
+  {
+    id: "gpt-4o-mini",
+    name: "OpenAI GPT-4o mini",
+    provider: "OpenAI",
+    baseURL: "https://api.openai.com/v1",
+  },
+  {
+    id: "gpt-4.1-mini",
+    name: "OpenAI GPT-4.1 mini",
+    provider: "OpenAI",
+    baseURL: "https://api.openai.com/v1",
+  },
+  {
+    id: "deepseek-chat",
+    name: "DeepSeek Chat",
+    provider: "DeepSeek",
+    baseURL: "https://api.deepseek.com/v1",
+  },
+  {
+    id: "deepseek-reasoner",
+    name: "DeepSeek Reasoner",
+    provider: "DeepSeek",
+    baseURL: "https://api.deepseek.com/v1",
+  },
+  {
+    id: "kimi-latest",
+    name: "Moonshot Kimi",
+    provider: "Moonshot",
+    baseURL: "https://api.moonshot.cn/v1",
+  },
+];
+
 function StartConfig({ data, onChange }: { data: Record<string, unknown>; onChange: (d: Record<string, unknown>) => void }) {
   return (
     <div className="flex flex-col gap-3">
@@ -21,20 +63,81 @@ function StartConfig({ data, onChange }: { data: Record<string, unknown>; onChan
 }
 
 function LLMConfig({ data, onChange }: { data: Record<string, unknown>; onChange: (d: Record<string, unknown>) => void }) {
+  const selectedModel = (data.model as string) || SUPPORTED_LLM_MODELS[0]?.id || "";
+  const modelOptions = SUPPORTED_LLM_MODELS.some((model) => model.id === selectedModel)
+    ? SUPPORTED_LLM_MODELS
+    : [
+        ...SUPPORTED_LLM_MODELS,
+        {
+          id: selectedModel,
+          name: `${selectedModel} (current workflow)`,
+          provider: "Custom",
+          baseURL: "",
+        },
+      ];
+  const selectedOption =
+    modelOptions.find((model) => model.id === selectedModel) ?? SUPPORTED_LLM_MODELS[0];
+  const configuredBaseURL =
+    typeof data.baseURL === "string" && data.baseURL.trim().length > 0
+      ? data.baseURL
+      : selectedOption?.baseURL ?? "";
+
+  const handleModelChange = (modelId: string) => {
+    const nextOption =
+      SUPPORTED_LLM_MODELS.find((model) => model.id === modelId) ??
+      SUPPORTED_LLM_MODELS[0];
+
+    onChange({
+      ...data,
+      model: modelId,
+      baseURL: nextOption?.baseURL ?? "",
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium text-slate-700">Model</span>
         <select
           className="border border-slate-300 rounded-md p-2 text-sm"
-          value={(data.model as string) || "gpt-4o-mini"}
-          onChange={(e) => onChange({ ...data, model: e.target.value })}
+          value={selectedModel}
+          onChange={(e) => handleModelChange(e.target.value)}
         >
-          <option value="gpt-4o-mini">gpt-4o-mini</option>
-          <option value="gpt-4o">gpt-4o</option>
-          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-          <option value="kimi-latest">kimi-latest</option>
+          {modelOptions.map((model) => (
+            <option key={model.id} value={model.id}>
+              {model.name}
+            </option>
+          ))}
         </select>
+        <span className="text-xs text-slate-400">
+          Supported provider: {selectedOption?.provider ?? "OpenAI-compatible"}
+        </span>
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">API Key</span>
+        <input
+          type="password"
+          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
+          placeholder="sk-..."
+          value={(data.apiKey as string) || ""}
+          onChange={(e) => onChange({ ...data, apiKey: e.target.value })}
+        />
+        <span className="text-xs text-slate-400">
+          Select a supported model first, then paste the provider API key here.
+        </span>
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Base URL</span>
+        <input
+          type="text"
+          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
+          placeholder="https://api.openai.com/v1"
+          value={configuredBaseURL}
+          onChange={(e) => onChange({ ...data, baseURL: e.target.value })}
+        />
+        <span className="text-xs text-slate-400">
+          Defaults to the selected provider endpoint and can be overridden for proxies or compatible gateways.
+        </span>
       </label>
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium text-slate-700">System Prompt</span>
