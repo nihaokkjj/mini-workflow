@@ -128,6 +128,12 @@ export class RunService {
           errorMsg = event.message;
         }
       }
+    } catch (err: unknown) {
+      // Engine validation and node execution can still throw directly. Convert
+      // those failures into the same terminal event/status path as SSE errors.
+      errorMsg = err instanceof Error ? err.message : "Unknown execution error";
+      finalStatus = activeRun.timedOut ? "timeout" : controller.signal.aborted ? "canceled" : "failed";
+      yield this.makeErrorEvent(errorMsg);
     } finally {
       clearTimeout(timeout);
       this.activeRuns.delete(runId);

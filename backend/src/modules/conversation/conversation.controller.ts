@@ -214,7 +214,17 @@ export class ConversationController {
       );
     } finally {
       if (assistantContent) {
-        await this.convService.saveMessage(conversationId, "assistant", assistantContent);
+        try {
+          // Persist the final assistant text after streaming completes so a
+          // storage failure does not hide the original run outcome.
+          await this.convService.saveMessage(conversationId, "assistant", assistantContent);
+        } catch (err: unknown) {
+          const message =
+            err instanceof Error ? err.message : "Failed to save assistant message";
+          res.write(
+            `event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message, timestamp: Date.now() })}\n\n`,
+          );
+        }
       }
       res.end();
     }

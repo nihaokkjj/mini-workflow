@@ -54,14 +54,18 @@ export default function ChatPage() {
     try {
       const { data } = await listConversations(appId);
       setConversations(data);
-    } catch { /* ignore */ }
+    } catch {
+      showToast("Failed to load conversations");
+    }
   };
 
   const loadMessages = async (conversationId: string) => {
     try {
       const { data } = await getMessages(conversationId);
       setMessages(data);
-    } catch { /* ignore */ }
+    } catch {
+      showToast("Failed to load messages");
+    }
   };
 
   const handleSend = async () => {
@@ -86,6 +90,8 @@ export default function ChatPage() {
     setIsRunning(true);
     controllerRef.current?.abort();
 
+    let runFailed = false;
+
     controllerRef.current = startChatRun(
       conversationId,
       workflowId,
@@ -100,17 +106,23 @@ export default function ChatPage() {
             return prev || text;
           });
         } else if (event.event === "error") {
+          runFailed = true;
           setStreaming((prev) => prev + `\n[Error: ${event.message}]`);
+          showToast(event.message);
         }
       },
       () => {
         setIsRunning(false);
-        setStreaming("");
+        if (!runFailed) {
+          setStreaming("");
+        }
         loadMessages(conversationId!);
         loadConversations();
       },
       (err) => {
+        runFailed = true;
         setStreaming((prev) => prev + `\n[Error: ${err}]`);
+        showToast(err);
         setIsRunning(false);
       },
     );
