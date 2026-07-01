@@ -1,5 +1,5 @@
 {
-  "installCommand": "corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm install --frozen-lockfile",
+  "installCommand": "corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm install --frozen-lockfile --prod=false",
   "buildCommand": "pnpm build:shared && pnpm build:frontend",
   "outputDirectory": "frontend/dist"
 }

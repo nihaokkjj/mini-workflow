@@ -3,7 +3,7 @@ services:
     name: mini-dify-backend
     runtime: node
     plan: free
-    buildCommand: node -v && corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm -v && pnpm install --frozen-lockfile && pnpm build:shared && pnpm build:backend
+    buildCommand: node -v && corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm -v && pnpm install --frozen-lockfile --prod=false && pnpm build:shared && pnpm build:backend
     startCommand: pnpm --filter @mini-dify/backend start
     envVars:
       - key: NODE_VERSION

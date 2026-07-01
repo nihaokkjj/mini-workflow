@@ -16,7 +16,7 @@ Recommended settings:
 
 - Root Directory: leave empty
 - Runtime: Node
-- Build Command: `node -v && corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm -v && pnpm install --frozen-lockfile && pnpm build:shared && pnpm build:backend`
+- Build Command: `node -v && corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm -v && pnpm install --frozen-lockfile --prod=false && pnpm build:shared && pnpm build:backend`
 - Start Command: `pnpm --filter @mini-dify/backend start`
 
 Environment variables:
@@ -38,7 +38,7 @@ The checked-in `vercel.json` configures the root workspace build. If you configu
 Recommended settings:
 
 - Root Directory: leave empty
-- Install Command: `corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm install --frozen-lockfile`
+- Install Command: `corepack enable && corepack prepare pnpm@9.15.4 --activate && pnpm install --frozen-lockfile --prod=false`
 - Build Command: `pnpm build:shared && pnpm build:frontend`
 - Output Directory: `frontend/dist`
 
