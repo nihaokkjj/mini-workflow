@@ -62,6 +62,26 @@ export class LLMNode extends BaseNode {
         timeout: 60000,
       },
       (res) => {
+        // Check for non-success status codes (e.g. 401 Unauthorized, 404 Not Found)
+        if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+          let errorBody = "";
+          res.on("data", (chunk: Buffer) => {
+            errorBody += chunk.toString();
+          });
+          res.on("end", () => {
+            let msg = `LLM API returned ${res.statusCode}`;
+            try {
+              const err = JSON.parse(errorBody);
+              if (err.error?.message) msg += `: ${err.error.message}`;
+            } catch {
+              if (errorBody) msg += `: ${errorBody.slice(0, 200)}`;
+            }
+            pushError(msg);
+          });
+          res.on("error", (err) => pushError(err.message));
+          return;
+        }
+
         let buffer = "";
 
         res.on("data", (chunk: Buffer) => {
@@ -128,11 +148,19 @@ export class LLMNode extends BaseNode {
   async *run(): AsyncGenerator<GraphEngineEvent> {
     const nodeId = this.config.id;
     const data = this.config.data;
+    const configuredApiKey = typeof data.apiKey === "string" ? data.apiKey.trim() : "";
+    const configuredBaseURL = typeof data.baseURL === "string" ? data.baseURL.trim() : "";
 
     yield { event: "node_start", nodeId, nodeType: "llm", timestamp: Date.now() };
 
-    const apiKey = process.env.OPENAI_API_KEY ?? "sk-placeholder";
-    const baseURL = (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
+    // Allow each workflow node to target its own provider credentials while
+    // still falling back to process envs for existing deployments.
+    const apiKey = configuredApiKey || process.env.OPENAI_API_KEY || "sk-placeholder";
+    const baseURL = (
+      configuredBaseURL ||
+      process.env.OPENAI_BASE_URL ||
+      "https://api.openai.com/v1"
+    ).replace(/\/$/, "");
     const model = (data.model as string) || "gpt-4o-mini";
     const inputs = this.getInputs();
     const systemPrompt = this.resolveTemplate((data.systemPrompt as string) || "You are a helpful assistant.");
@@ -159,7 +187,18 @@ export class LLMNode extends BaseNode {
       return;
     }
 
-    const outputs = { text: fullText || "(empty)", model };
+    if (!fullText) {
+      yield {
+        event: "error",
+        nodeId,
+        nodeType: "llm",
+        message: "LLM returned empty response — check API key and base URL configuration",
+        timestamp: Date.now(),
+      };
+      return;
+    }
+
+    const outputs = { text: fullText, model };
     this.pool.setNodeOutput(nodeId, outputs);
     yield { event: "node_end", nodeId, outputs, timestamp: Date.now() };
   }

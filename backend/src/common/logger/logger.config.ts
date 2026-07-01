@@ -28,6 +28,7 @@ export function createLoggerOptions(): Params {
           "req.headers.authorization",
           "req.headers.cookie",
           "req.body.apiKey",
+          "req.body.graph.nodes[*].data.apiKey",
           "req.body.password",
           "res.headers['set-cookie']",
         ],

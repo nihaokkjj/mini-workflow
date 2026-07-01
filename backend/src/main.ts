@@ -6,6 +6,7 @@ config({ path: resolve(__dirname, "..", ".env") });
 
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { Logger } from "nestjs-pino";
 import { AppRootModule } from "./app.module";
 
@@ -25,7 +26,11 @@ async function bootstrap() {
   // Render/Vercel deployment needs explicit production origins while keeping local dev simple.
   app.enableCors({
     origin: (origin, cb) => {
-      if (!origin || origin.startsWith("http://localhost:") || corsOrigins.includes(origin)) {
+      if (
+        !origin ||
+        origin.startsWith("http://localhost:") ||
+        corsOrigins.includes(origin)
+      ) {
         cb(null, true);
       } else {
         cb(new Error(`CORS blocked origin: ${origin}`));
@@ -35,6 +40,17 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 3001;
+
+  const config = new DocumentBuilder()
+    .setTitle("Mini-Dify API")
+    .setDescription("Mini-Dify 后端接口文档")
+    .setVersion("0.1.0")
+    .addBearerAuth() // 如果需要 token 认证
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("api/docs", app, document); // 访问路径: /api/docs
+
   await app.listen(port);
   app.get(Logger).log(`Mini-Dify backend running on http://localhost:${port}`);
 }
