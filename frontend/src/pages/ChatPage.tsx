@@ -14,6 +14,7 @@ import type { AppDto, ConversationDto, MessageDto, GraphEngineEvent } from "../t
 export default function ChatPage() {
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
+  const skipNextMessageLoadRef = useRef<string | null>(null);
   const [app, setApp] = useState<AppDto | null>(null);
   const [workflowId, setWorkflowId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationDto[]>([]);
@@ -45,8 +46,15 @@ export default function ChatPage() {
   }, [appId, navigate]);
 
   useEffect(() => {
-    if (selectedId) loadMessages(selectedId);
-    else setMessages([]);
+    if (!selectedId) {
+      setMessages([]);
+      return;
+    }
+    if (skipNextMessageLoadRef.current === selectedId) {
+      skipNextMessageLoadRef.current = null;
+      return;
+    }
+    loadMessages(selectedId);
   }, [selectedId]);
 
   const loadConversations = async () => {
@@ -71,11 +79,15 @@ export default function ChatPage() {
   const handleSend = async () => {
     if (!input.trim() || !workflowId || isRunning) return;
 
+    const query = input.trim();
     let conversationId = selectedId;
     if (!conversationId) {
       try {
         const { data } = await createConversation(appId!);
         conversationId = data.id;
+        // Keep the optimistic user message visible while the brand-new
+        // conversation is still empty on the server.
+        skipNextMessageLoadRef.current = conversationId;
         setSelectedId(conversationId);
         setConversations((prev) => [data, ...prev]);
       } catch {
@@ -84,7 +96,15 @@ export default function ChatPage() {
       }
     }
 
-    const query = input.trim();
+    const optimisticMessage: MessageDto = {
+      id: `temp-user-${Date.now()}`,
+      conversationId,
+      role: "user",
+      content: query,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
     setInput("");
     setStreaming("");
     setIsRunning(true);

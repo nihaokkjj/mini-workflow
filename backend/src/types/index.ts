@@ -11,7 +11,8 @@ export type NodeType =
   | "code"
   | "http"
   | "template"
-  | "iteration";
+  | "iteration"
+  | "knowledge-retrieval";
 
 /** Configuration for a single node */
 export interface NodeConfig {
@@ -47,6 +48,36 @@ export interface ExecutionContext {
   workflowId: string;
   userId: string;
   abortSignal?: AbortSignal;
+  ragRuntime?: {
+    retrieve(input: {
+      appId: string;
+      query: string;
+      datasetIds?: string[];
+      topK?: number;
+      scoreThreshold?: number;
+      retrievalMode?: "keyword" | "semantic" | "hybrid";
+    }): Promise<{
+      query: string;
+      context: string;
+      sourceCount: number;
+      sources: Array<{
+        title: string;
+        content: string;
+        datasetId: string;
+        datasetName: string;
+        documentId: string;
+        documentName: string;
+        segmentId: string;
+        score: number;
+        position: number;
+        metadata?: Record<string, unknown>;
+      }>;
+      hits: Array<{
+        segmentId: string;
+        score: number;
+      }>;
+    }>;
+  };
 }
 
 // ==================== SSE Event Types ====================

@@ -7,6 +7,7 @@ import { IfElseNode } from "../nodes/if-else.node";
 import { HttpNode } from "../nodes/http.node";
 import { TemplateNode } from "../nodes/template.node";
 import { CodeNode } from "../nodes/code.node";
+import { KnowledgeRetrievalNode } from "../nodes/knowledge-retrieval.node";
 
 /** Map of node type string to its constructor */
 type NodeConstructor = new (
@@ -26,6 +27,7 @@ export class NodeFactory {
     this.register("http", HttpNode);
     this.register("template", TemplateNode);
     this.register("code", CodeNode);
+    this.register("knowledge-retrieval", KnowledgeRetrievalNode);
   }
 
   static register(type: string, ctor: NodeConstructor): void {

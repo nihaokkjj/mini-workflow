@@ -5,6 +5,7 @@ import { Run } from "../../database/entities/run.entity";
 import { Workflow } from "../../database/entities/workflow.entity";
 import { GraphEngine } from "../../core/engine/graph-engine";
 import { GraphEngineEvent, ExecutionContext } from "../../types";
+import { RagRetrievalOrchestrator } from "../rag/retrieval/rag-retrieval.orchestrator";
 
 type RunTerminalStatus = "completed" | "failed" | "canceled" | "timeout";
 
@@ -23,6 +24,7 @@ export class RunService {
     private readonly runRepo: Repository<Run>,
     @InjectRepository(Workflow)
     private readonly workflowRepo: Repository<Workflow>,
+    private readonly ragRetrieval: RagRetrievalOrchestrator,
   ) {}
 
   async createRun(workflowId: string, inputs: Record<string, unknown>): Promise<Run> {
@@ -99,6 +101,9 @@ export class RunService {
       workflowId,
       userId: "anonymous",
       abortSignal: controller.signal,
+      ragRuntime: {
+        retrieve: (input) => this.ragRetrieval.retrieve(input),
+      },
     };
 
     // Inject run inputs into the start node
