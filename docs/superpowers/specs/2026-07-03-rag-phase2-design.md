@@ -177,7 +177,9 @@ export interface CandidateHit {
 
 ### 6.4 具体实现
 
-- `SqliteKeywordSearchAdapter`：迁移现有关键词逻辑，只处理 `mode === "keyword"`
+- `SqliteKeywordIndexAdapter`（现有适配器升级）：
+  - 实现 `SearchIndexAdapter.search`，只处理 `mode === "keyword"`
+  - 同时提供 `upsertSegments` 方法，供索引流程写入关键词索引
 - `SqliteSemanticSearchAdapter`：
   1. 调用 `EmbeddingAdapter.embed([query])` 得到 queryVector
   2. 查询 `DocumentSegment` 获取候选 segment
@@ -191,21 +193,9 @@ export interface CandidateHit {
 
 ### 6.5 索引写入侧
 
-新增 `KeywordIndexWriter` 与 `VectorIndexWriter`：
+关键词索引写入继续由 `SqliteKeywordIndexAdapter.upsertSegments` 提供。
 
-```ts
-export interface KeywordIndexWriter {
-  upsertSegments(segments: IndexedSegment[]): Promise<void>;
-  deleteByDocument(documentId: string): Promise<void>;
-}
-
-export interface VectorIndexWriter {
-  upsertEmbeddings(embeddings: SegmentEmbedding[]): Promise<void>;
-  deleteByDocument(documentId: string): Promise<void>;
-}
-```
-
-`RagIndexingOrchestrator` 在删除旧 segment 和旧 keyword index 时，同步调用 `VectorIndexWriter.deleteByDocument` 清理过期 embedding。
+`RagIndexingOrchestrator` 在删除旧 segment 和旧 keyword index 时，同步调用 `VectorIndexAdapter.deleteByDocument` 清理过期 embedding。
 
 ## 7. 检索流程
 
@@ -270,8 +260,8 @@ extract → clean → split → persist DocumentSegment → write keyword index
 
 ```ts
 await this.segmentRepo.delete({ documentId: document.id });
-await this.keywordIndexWriter.deleteByDocument(document.id);
-await this.vectorIndexWriter.deleteByDocument(document.id);
+await this.searchIndex.deleteByDocument(document.id);
+await this.vectorIndex.deleteByDocument(document.id);
 ```
 
 ### 8.2 懒加载触发
