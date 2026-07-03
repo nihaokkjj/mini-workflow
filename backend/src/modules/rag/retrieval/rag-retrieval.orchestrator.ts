@@ -2,9 +2,20 @@ import { Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Dataset } from "../../../database/entities/dataset.entity";
-import { SEARCH_INDEX_ADAPTER, SearchIndexAdapter } from "../adapters/search-index.adapter";
+import {
+  SEARCH_INDEX_ADAPTER,
+  SearchIndexAdapter,
+} from "../adapters/search-index.adapter";
 import { ContextAssembler, Source } from "./context-assembler";
 import { DatasetSelector } from "./dataset-selector";
+import {
+  RetrievalPlan,
+  RetrievalPolicyResolver,
+} from "./retrieval-policy-resolver";
+import {
+  RetrievalTrace,
+  RetrievalTraceBuilder,
+} from "./retrieval-trace-builder";
 import { SourceHydrator } from "./source-hydrator";
 
 export interface RetrieveInput {
@@ -25,6 +36,7 @@ export interface RetrieveResult {
     segmentId: string;
     score: number;
   }>;
+  trace: RetrievalTrace;
 }
 
 @Injectable()
@@ -33,42 +45,98 @@ export class RagRetrievalOrchestrator {
     @InjectRepository(Dataset)
     private readonly datasetRepo: Repository<Dataset>,
     private readonly datasetSelector: DatasetSelector,
+    private readonly retrievalPolicyResolver: RetrievalPolicyResolver,
     @Inject(SEARCH_INDEX_ADAPTER)
     private readonly searchIndex: SearchIndexAdapter,
     private readonly sourceHydrator: SourceHydrator,
     private readonly contextAssembler: ContextAssembler,
+    private readonly retrievalTraceBuilder: RetrievalTraceBuilder
   ) {}
 
   async retrieve(input: RetrieveInput): Promise<RetrieveResult> {
     const query = input.query.trim();
     if (!query) {
-      return { query: "", context: "", sourceCount: 0, sources: [], hits: [] };
+      return this.emptyResult(
+        {
+          appId: input.appId,
+          query: "",
+          datasetIds: [],
+          retrievalMode: input.retrievalMode ?? "keyword",
+          topK: input.topK ?? 4,
+          scoreThreshold: input.scoreThreshold ?? 0.15,
+          candidateK: Math.max((input.topK ?? 4) * 2, input.topK ?? 4),
+          contextBudgetTokens: 2000,
+          enableQueryRewrite: false,
+        },
+        input.datasetIds
+      );
     }
 
-    const datasetIds = await this.datasetSelector.select(input.appId, input.datasetIds);
-    if (datasetIds.length === 0) {
-      return { query, context: "", sourceCount: 0, sources: [], hits: [] };
+    const selection = await this.datasetSelector.select(
+      input.appId,
+      input.datasetIds
+    );
+    if (selection.datasetIds.length === 0) {
+      return this.emptyResult(
+        {
+          appId: input.appId,
+          query,
+          datasetIds: [],
+          retrievalMode: input.retrievalMode ?? "keyword",
+          topK: input.topK ?? 4,
+          scoreThreshold: input.scoreThreshold ?? 0.15,
+          candidateK: Math.max((input.topK ?? 4) * 2, input.topK ?? 4),
+          contextBudgetTokens: 2000,
+          enableQueryRewrite: false,
+        },
+        input.datasetIds,
+        selection
+      );
     }
 
-    const datasets = await this.datasetRepo.find({ where: datasetIds.map((id) => ({ id })) });
+    const datasets = await this.datasetRepo.find({
+      where: selection.datasetIds.map((id) => ({ id })),
+    });
     if (datasets.length === 0) {
-      return { query, context: "", sourceCount: 0, sources: [], hits: [] };
+      return this.emptyResult(
+        {
+          appId: input.appId,
+          query,
+          datasetIds: selection.datasetIds,
+          retrievalMode: input.retrievalMode ?? "keyword",
+          topK: input.topK ?? 4,
+          scoreThreshold: input.scoreThreshold ?? 0.15,
+          candidateK: Math.max((input.topK ?? 4) * 2, input.topK ?? 4),
+          contextBudgetTokens: 2000,
+          enableQueryRewrite: false,
+        },
+        input.datasetIds,
+        selection
+      );
     }
 
-    const topK = input.topK ?? Math.max(...datasets.map((dataset) => dataset.topK), 4);
-    const scoreThreshold =
-      input.scoreThreshold ?? Math.min(...datasets.map((dataset) => dataset.scoreThreshold), 0.15);
+    const plan = this.retrievalPolicyResolver.resolve(
+      { ...input, query },
+      datasets
+    );
 
     // Semantic and hybrid modes are accepted already so the node contract does
     // not change when Phase 2 swaps in richer search adapters.
     const hits = await this.searchIndex.search({
-      datasetIds: datasets.map((dataset) => dataset.id),
+      datasetIds: plan.datasetIds,
       query,
-      topK,
+      topK: plan.topK,
     });
 
-    const filteredHits = hits.filter((hit) => hit.score >= scoreThreshold);
+    const filteredHits = hits.filter((hit) => hit.score >= plan.scoreThreshold);
     const sources = await this.sourceHydrator.hydrate(filteredHits);
+    const trace = this.retrievalTraceBuilder.build(
+      selection,
+      plan,
+      hits,
+      filteredHits,
+      input.datasetIds
+    );
 
     return {
       query,
@@ -76,6 +144,32 @@ export class RagRetrievalOrchestrator {
       sourceCount: sources.length,
       sources,
       hits: filteredHits,
+      trace,
+    };
+  }
+
+  private emptyResult(
+    plan: RetrievalPlan,
+    requestedDatasetIds?: string[],
+    selection = {
+      datasetIds: plan.datasetIds,
+      availableDatasetIds: plan.datasetIds,
+      usedExplicitSelection: Boolean(requestedDatasetIds?.length),
+    }
+  ): RetrieveResult {
+    return {
+      query: plan.query,
+      context: "",
+      sourceCount: 0,
+      sources: [],
+      hits: [],
+      trace: this.retrievalTraceBuilder.build(
+        selection,
+        plan,
+        [],
+        [],
+        requestedDatasetIds
+      ),
     };
   }
 }

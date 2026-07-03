@@ -76,6 +76,33 @@ export interface ExecutionContext {
         segmentId: string;
         score: number;
       }>;
+      trace: {
+        requestedDatasetIds: string[];
+        availableDatasetIds: string[];
+        selectedDatasetIds: string[];
+        usedExplicitSelection: boolean;
+        plan: {
+          retrievalMode: "keyword" | "semantic" | "hybrid";
+          topK: number;
+          scoreThreshold: number;
+          candidateK: number;
+          contextBudgetTokens: number;
+          enableQueryRewrite: boolean;
+        };
+        rawHits: Array<{
+          segmentId: string;
+          score: number;
+        }>;
+        filteredHits: Array<{
+          segmentId: string;
+          score: number;
+        }>;
+        droppedHits: Array<{
+          segmentId: string;
+          score: number;
+          reason: "score_below_threshold";
+        }>;
+      };
     }>;
   };
 }
@@ -83,12 +110,28 @@ export interface ExecutionContext {
 // ==================== SSE Event Types ====================
 
 export type GraphEngineEvent =
-  | { event: "node_start"; nodeId: string; nodeType: NodeType; timestamp: number }
+  | {
+      event: "node_start";
+      nodeId: string;
+      nodeType: NodeType;
+      timestamp: number;
+    }
   | { event: "node_chunk"; nodeId: string; text: string; timestamp: number }
-  | { event: "node_end"; nodeId: string; outputs: Record<string, unknown>; timestamp: number }
+  | {
+      event: "node_end";
+      nodeId: string;
+      outputs: Record<string, unknown>;
+      timestamp: number;
+    }
   | { event: "node_skipped"; nodeId: string; reason: string; timestamp: number }
   | { event: "graph_end"; outputs: Record<string, unknown>; timestamp: number }
-  | { event: "error"; nodeId: string | null; nodeType: NodeType | null; message: string; timestamp: number };
+  | {
+      event: "error";
+      nodeId: string | null;
+      nodeType: NodeType | null;
+      message: string;
+      timestamp: number;
+    };
 
 // ==================== DTOs ====================
 
