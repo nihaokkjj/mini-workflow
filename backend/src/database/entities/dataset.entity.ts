@@ -17,7 +17,7 @@ export class Dataset {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
+  @Column("text", { nullable: true })
   description: string | null;
 
   @Column({ default: "active" })

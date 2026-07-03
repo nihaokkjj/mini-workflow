@@ -22,10 +22,16 @@ import IfElseNodeComponent from "./nodes/IfElseNodeComponent";
 import HttpNodeComponent from "./nodes/HttpNodeComponent";
 import CodeNodeComponent from "./nodes/CodeNodeComponent";
 import TemplateNodeComponent from "./nodes/TemplateNodeComponent";
+import KnowledgeRetrievalNodeComponent from "./nodes/KnowledgeRetrievalNodeComponent";
 import { NodePalette } from "./palette/NodePalette";
 import { NodeConfigPanel } from "./NodeConfigPanel";
 import { useWorkflowStore } from "../../stores/workflow.store";
-import { cancelRun, saveWorkflow, startRun, subscribeToRunStream } from "../../services/api";
+import {
+  cancelRun,
+  saveWorkflow,
+  startRun,
+  subscribeToRunStream,
+} from "../../services/api";
 import type { NodeType, GraphEngineEvent } from "../../types";
 
 const nodeTypes = {
@@ -36,6 +42,7 @@ const nodeTypes = {
   http: HttpNodeComponent,
   code: CodeNodeComponent,
   template: TemplateNodeComponent,
+  "knowledge-retrieval": KnowledgeRetrievalNodeComponent,
 };
 
 let nodeIdCounter = 0;
@@ -60,13 +67,19 @@ function WorkflowCanvasInner() {
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [output, setOutput] = useState("");
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
+  const [toast, setToast] = useState<{
+    tone: "success" | "error" | "info";
+    text: string;
+  } | null>(null);
   const streamControllerRef = useRef<AbortController | null>(null);
 
-  const showToast = useCallback((tone: "success" | "error" | "info", text: string) => {
-    setToast({ tone, text });
-    window.setTimeout(() => setToast(null), 2600);
-  }, []);
+  const showToast = useCallback(
+    (tone: "success" | "error" | "info", text: string) => {
+      setToast({ tone, text });
+      window.setTimeout(() => setToast(null), 2600);
+    },
+    []
+  );
 
   // Cleanup SSE stream on unmount
   useEffect(() => {
@@ -81,7 +94,7 @@ function WorkflowCanvasInner() {
       store.nodes.map((node) => ({
         ...node,
         data: node.data ?? {},
-      })),
+      }))
     );
     setRfEdges(store.edges.map((edge) => ({ ...edge })));
   }, [store.nodes, store.edges, setRfNodes, setRfEdges]);
@@ -89,9 +102,12 @@ function WorkflowCanvasInner() {
   const onConnect = useCallback(
     (conn: Connection) => {
       store.onConnect(conn);
-      setRfEdges((eds) => [...eds, { ...conn, id: `edge-${Date.now()}` } as Edge]);
+      setRfEdges((eds) => [
+        ...eds,
+        { ...conn, id: `edge-${Date.now()}` } as Edge,
+      ]);
     },
-    [store, setRfEdges],
+    [store, setRfEdges]
   );
 
   const onNodesChange = useCallback(
@@ -99,7 +115,7 @@ function WorkflowCanvasInner() {
       onNodesChangeRf(changes);
       store.onNodesChange(changes);
     },
-    [store, onNodesChangeRf],
+    [store, onNodesChangeRf]
   );
 
   const onEdgesChange = useCallback(
@@ -107,7 +123,7 @@ function WorkflowCanvasInner() {
       onEdgesChangeRf(changes);
       store.onEdgesChange(changes);
     },
-    [store, onEdgesChangeRf],
+    [store, onEdgesChangeRf]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -118,7 +134,9 @@ function WorkflowCanvasInner() {
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-      const type = event.dataTransfer.getData("application/reactflow-type") as NodeType;
+      const type = event.dataTransfer.getData(
+        "application/reactflow-type"
+      ) as NodeType;
       if (!type) return;
 
       const position = reactFlowInstance?.screenToFlowPosition({
@@ -142,17 +160,17 @@ function WorkflowCanvasInner() {
           position,
           data: {},
         }),
-        store.edges,
+        store.edges
       );
     },
-    [reactFlowInstance, setRfNodes, store],
+    [reactFlowInstance, setRfNodes, store]
   );
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       store.selectNode(node.id);
     },
-    [store],
+    [store]
   );
 
   const onCanvasClick = useCallback(() => {
@@ -188,7 +206,9 @@ function WorkflowCanvasInner() {
     setOutput("");
 
     try {
-      const { data: runData } = await startRun(store.workflowId, { input: "Hello" });
+      const { data: runData } = await startRun(store.workflowId, {
+        input: "Hello",
+      });
       setCurrentRunId(runData.runId);
 
       const controller = subscribeToRunStream(
@@ -202,7 +222,9 @@ function WorkflowCanvasInner() {
           } else if (event.event === "node_end") {
             store.setExecutingNode(null);
           } else if (event.event === "node_skipped") {
-            setOutput((prev) => prev + `[Skipped: ${event.nodeId}] ${event.reason}\n`);
+            setOutput(
+              (prev) => prev + `[Skipped: ${event.nodeId}] ${event.reason}\n`
+            );
           } else if (event.event === "graph_end") {
             setOutput(JSON.stringify(event.outputs, null, 2));
             store.setRunning(false);
@@ -228,7 +250,7 @@ function WorkflowCanvasInner() {
           store.setExecutingNode(null);
           setCurrentRunId(null);
           showToast("error", err);
-        },
+        }
       );
       streamControllerRef.current = controller;
     } catch (err: any) {
@@ -298,18 +320,30 @@ function WorkflowCanvasInner() {
           )}
           {store.executingNodeId && (
             <span className="text-sm text-slate-500">
-              Executing: <span className="font-mono text-orange-600">{store.executingNodeId}</span>
+              Executing:{" "}
+              <span className="font-mono text-orange-600">
+                {store.executingNodeId}
+              </span>
             </span>
           )}
         </div>
 
         {/* Canvas */}
-        <div ref={reactFlowWrapper} className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
+        <div
+          ref={reactFlowWrapper}
+          className="flex-1 relative"
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+        >
           {rfNodes.length === 0 && (
             <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
               <div className="rounded-lg border border-dashed border-slate-300 bg-white/85 px-5 py-4 text-center shadow-sm">
-                <div className="text-sm font-medium text-slate-700">Drag nodes from the left panel</div>
-                <div className="text-xs text-slate-500 mt-1">Start with Start, add work nodes, then connect to End.</div>
+                <div className="text-sm font-medium text-slate-700">
+                  Drag nodes from the left panel
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Start with Start, add work nodes, then connect to End.
+                </div>
               </div>
             </div>
           )}

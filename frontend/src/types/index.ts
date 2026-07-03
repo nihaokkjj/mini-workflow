@@ -1,6 +1,15 @@
 // Mirrors backend types for frontend consumption
 
-export type NodeType = "start" | "end" | "llm" | "if-else" | "code" | "http" | "template" | "iteration";
+export type NodeType =
+  | "start"
+  | "end"
+  | "llm"
+  | "if-else"
+  | "code"
+  | "http"
+  | "template"
+  | "iteration"
+  | "knowledge-retrieval";
 
 export interface NodeConfig {
   id: string;
@@ -63,10 +72,49 @@ export interface ModelDto {
   name: string;
 }
 
+export interface DatasetDto {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: "active" | "indexing" | "error" | "archived";
+  retrievalMode: "keyword" | "semantic" | "hybrid";
+  indexingMode: "economy" | "high_quality";
+  chunkSize: number;
+  chunkOverlap: number;
+  topK: number;
+  scoreThreshold: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppDatasetBindingDto {
+  id: string;
+  appId: string;
+  datasetId: string;
+  createdAt: string;
+  dataset: DatasetDto;
+}
+
 export type GraphEngineEvent =
-  | { event: "node_start"; nodeId: string; nodeType: NodeType; timestamp: number }
+  | {
+      event: "node_start";
+      nodeId: string;
+      nodeType: NodeType;
+      timestamp: number;
+    }
   | { event: "node_chunk"; nodeId: string; text: string; timestamp: number }
-  | { event: "node_end"; nodeId: string; outputs: Record<string, unknown>; timestamp: number }
+  | {
+      event: "node_end";
+      nodeId: string;
+      outputs: Record<string, unknown>;
+      timestamp: number;
+    }
   | { event: "graph_end"; outputs: Record<string, unknown>; timestamp: number }
   | { event: "node_skipped"; nodeId: string; reason: string; timestamp: number }
-  | { event: "error"; nodeId: string | null; nodeType: NodeType | null; message: string; timestamp: number };
+  | {
+      event: "error";
+      nodeId: string | null;
+      nodeType: NodeType | null;
+      message: string;
+      timestamp: number;
+    };

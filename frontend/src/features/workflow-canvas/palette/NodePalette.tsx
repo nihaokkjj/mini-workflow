@@ -7,6 +7,11 @@ const NODE_TEMPLATES: { type: NodeType; label: string; color: string }[] = [
   { type: "http", label: "HTTP", color: "bg-sky-100 border-sky-400" },
   { type: "code", label: "Code", color: "bg-slate-100 border-slate-500" },
   { type: "template", label: "Template", color: "bg-pink-100 border-pink-400" },
+  {
+    type: "knowledge-retrieval",
+    label: "Knowledge",
+    color: "bg-teal-100 border-teal-400",
+  },
   { type: "end", label: "End", color: "bg-red-100 border-red-400" },
 ];
 

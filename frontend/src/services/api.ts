@@ -1,8 +1,21 @@
 import axios from "axios";
-import type { AppDto, WorkflowDto, Graph, RunDto, GraphEngineEvent, ConversationDto, MessageDto, ModelDto } from "../types";
+import type {
+  AppDatasetBindingDto,
+  AppDto,
+  ConversationDto,
+  DatasetDto,
+  Graph,
+  GraphEngineEvent,
+  MessageDto,
+  ModelDto,
+  RunDto,
+  WorkflowDto,
+} from "../types";
 
 // Keep the local default for development while allowing Vercel to point at the Render API.
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api").replace(/\/$/, "");
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api"
+).replace(/\/$/, "");
 
 const api = axios.create({ baseURL: API_BASE_URL });
 
@@ -31,7 +44,7 @@ export function subscribeToRunStream(
   runId: string,
   onEvent: (event: GraphEngineEvent) => void,
   onDone: () => void,
-  onError: (err: string) => void,
+  onError: (err: string) => void
 ): AbortController {
   const controller = new AbortController();
 
@@ -85,6 +98,11 @@ export function subscribeToRunStream(
 // Models
 export const listModels = () => api.get<ModelDto[]>("/models");
 
+// RAG
+export const listDatasets = () => api.get<DatasetDto[]>("/rag/datasets");
+export const listAppDatasets = (appId: string) =>
+  api.get<AppDatasetBindingDto[]>(`/apps/${appId}/datasets`);
+
 // Conversations
 export const createConversation = (appId: string) =>
   api.post<ConversationDto>("/conversations", { appId });
@@ -95,7 +113,8 @@ export const listConversations = (appId: string) =>
 export const getMessages = (conversationId: string) =>
   api.get<MessageDto[]>(`/conversations/${conversationId}/messages`);
 
-export const deleteConversation = (id: string) => api.delete(`/conversations/${id}`);
+export const deleteConversation = (id: string) =>
+  api.delete(`/conversations/${id}`);
 
 export function startChatRun(
   conversationId: string,
@@ -103,7 +122,7 @@ export function startChatRun(
   inputs: Record<string, unknown>,
   onEvent: (event: GraphEngineEvent) => void,
   onDone: () => void,
-  onError: (err: string) => void,
+  onError: (err: string) => void
 ): AbortController {
   const controller = new AbortController();
 

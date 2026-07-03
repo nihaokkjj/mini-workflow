@@ -19,7 +19,9 @@ export class DatasetDocument {
   @Column()
   datasetId: string;
 
-  @ManyToOne(() => Dataset, (dataset) => dataset.documents, { onDelete: "CASCADE" })
+  @ManyToOne(() => Dataset, (dataset) => dataset.documents, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "datasetId" })
   dataset: Dataset;
 
@@ -29,7 +31,9 @@ export class DatasetDocument {
   @Column()
   sourceType: "text" | "markdown" | "file";
 
-  @Column({ nullable: true })
+  // Nullable union fields need an explicit SQLite column type or TypeORM
+  // reflects them as Object and rejects the entity metadata at startup.
+  @Column("text", { nullable: true })
   sourceUri: string | null;
 
   @Column("text")
@@ -38,7 +42,7 @@ export class DatasetDocument {
   @Column({ default: "pending" })
   status: "pending" | "indexing" | "completed" | "failed";
 
-  @Column({ nullable: true })
+  @Column("text", { nullable: true })
   errorMessage: string | null;
 
   @Column()
