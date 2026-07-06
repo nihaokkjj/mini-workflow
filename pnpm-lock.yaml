@@ -110,6 +110,9 @@ importers:
 
   frontend:
     dependencies:
+      "@tanstack/react-query":
+        specifier: ^5.0.0
+        version: 5.101.2(react@19.2.7)
       "@xyflow/react":
         specifier: ^12.5.0
         version: 12.11.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1172,6 +1175,20 @@ packages:
       }
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
+
+  "@tanstack/query-core@5.101.2":
+    resolution:
+      {
+        integrity: sha512-hH5MLoJhF7KaIGd7q3xTXGXvslI+GYlM1Z/35aSHHWaCJWB7XvTSHYuV3eM7tw+aE0mT/xMro4M4Q9rCGHT0lw==,
+      }
+
+  "@tanstack/react-query@5.101.2":
+    resolution:
+      {
+        integrity: sha512-seDkr6kzGzX1okaaTtZPtgA688CDPlXUz1C6xSg0ESqn04Vuc8tlrYms1s3de+znBqhPVxFRfpAfUf+6XvfPWg==,
+      }
+    peerDependencies:
+      react: ^18 || ^19
 
   "@tokenizer/inflate@0.2.7":
     resolution:
@@ -5632,6 +5649,13 @@ snapshots:
       "@tailwindcss/oxide": 4.3.1
       tailwindcss: 4.3.1
       vite: 8.1.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
+
+  "@tanstack/query-core@5.101.2": {}
+
+  "@tanstack/react-query@5.101.2(react@19.2.7)":
+    dependencies:
+      "@tanstack/query-core": 5.101.2
+      react: 19.2.7
 
   "@tokenizer/inflate@0.2.7":
     dependencies:
