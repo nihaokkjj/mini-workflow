@@ -13,9 +13,10 @@ import type {
   RunDto,
   WorkflowDto,
 } from "../types";
+import { subscribeToJsonStream } from "./sse";
 
 // Keep the local default for development while allowing Vercel to point at the Render API.
-const API_BASE_URL = (
+export const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api"
 ).replace(/\/$/, "");
 
@@ -50,53 +51,10 @@ export function subscribeToRunStream(
   onDone: () => void,
   onError: (err: string) => void
 ): AbortController {
-  const controller = new AbortController();
-
-  fetch(`${API_BASE_URL}/runs/${runId}/stream`, {
-    signal: controller.signal,
-  })
-    .then(async (response) => {
-      if (!response.ok || !response.body) {
-        onError(`HTTP ${response.status}`);
-        return;
-      }
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        // Parse SSE lines
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const event: GraphEngineEvent = JSON.parse(line.slice(6));
-              onEvent(event);
-              if (event.event === "graph_end" || event.event === "error") {
-                onDone();
-                return;
-              }
-            } catch {
-              // Skip unparseable lines
-            }
-          }
-        }
-      }
-      onDone();
-    })
-    .catch((err) => {
-      if ((err as Error).name !== "AbortError") {
-        onError((err as Error).message);
-      }
-    });
-
-  return controller;
+  return subscribeToJsonStream<GraphEngineEvent>(
+    `${API_BASE_URL}/runs/${runId}/stream`,
+    { onEvent, onDone, onError }
+  );
 }
 
 // Models
@@ -134,53 +92,13 @@ export function startChatRun(
   onDone: () => void,
   onError: (err: string) => void
 ): AbortController {
-  const controller = new AbortController();
-
-  fetch(`${API_BASE_URL}/conversations/${conversationId}/runs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ workflowId, inputs }),
-    signal: controller.signal,
-  })
-    .then(async (response) => {
-      if (!response.ok || !response.body) {
-        onError(`HTTP ${response.status}`);
-        return;
-      }
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          // Match both "event: <type>" and "data: <json>" lines
-          if (line.startsWith("data: ")) {
-            try {
-              const event: GraphEngineEvent = JSON.parse(line.slice(6));
-              onEvent(event);
-            } catch {
-              // Skip unparseable lines
-            }
-          }
-        }
-      }
-      // Wait until the SSE connection is fully closed before declaring done.
-      // This ensures the server has finished its finally block (e.g. saving
-      // the assistant message) before the client reloads conversation state.
-      onDone();
-    })
-    .catch((err) => {
-      if ((err as Error).name !== "AbortError") {
-        onError((err as Error).message);
-      }
-    });
-
-  return controller;
+  return subscribeToJsonStream<GraphEngineEvent>(
+    `${API_BASE_URL}/conversations/${conversationId}/runs`,
+    { onEvent, onDone, onError },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workflowId, inputs }),
+    }
+  );
 }
