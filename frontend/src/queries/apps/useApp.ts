@@ -5,7 +5,10 @@ import { appKeys } from "./keys";
 export function useApp(id: string | undefined) {
   return useQuery({
     queryKey: appKeys.detail(id ?? ""),
-    queryFn: () => getApp(id!),
+    queryFn: async () => {
+      const { data } = await getApp(id!);
+      return data;
+    },
     enabled: Boolean(id),
   });
 }

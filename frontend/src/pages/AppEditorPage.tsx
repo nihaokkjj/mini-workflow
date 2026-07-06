@@ -1,121 +1,51 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getApp, getWorkflowByApp, listAppDatasets } from "../services/api";
-import {
-  nextAppDatasetRequestVersion,
-  shouldApplyAppDatasetResponse,
-} from "../features/app-datasets/app-dataset-sync.model";
+import { listAppDatasets } from "../services/api";
+import { useApp } from "../queries/apps/useApp";
+import { useWorkflow } from "../queries/workflows/useWorkflow";
 import { AppDatasetBindingsDrawer } from "../features/app-datasets/AppDatasetBindingsDrawer";
 import { RetrievalDebugDrawer } from "../features/retrieval-debug/RetrievalDebugDrawer";
 import { WorkflowCanvas } from "../features/workflow-canvas/WorkflowCanvas";
 import { useWorkflowStore } from "../stores/workflow.store";
-import type { AppDto } from "../types";
 
 export default function AppEditorPage() {
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
-  const [app, setApp] = useState<AppDto | null>(null);
+  const { data: app, error: appError } = useApp(appId);
+  const { data: workflow, isLoading: workflowLoading } = useWorkflow(appId);
   const [isDatasetDrawerOpen, setIsDatasetDrawerOpen] = useState(false);
   const [isRetrievalDebugOpen, setIsRetrievalDebugOpen] = useState(false);
-  const [workflowLoading, setWorkflowLoading] = useState(true);
-  const appDatasetRequestVersionRef = useRef(0);
   const setWorkflowApp = useWorkflowStore((s) => s.setApp);
   const appDatasets = useWorkflowStore((s) => s.appDatasets);
   const setAppDatasets = useWorkflowStore((s) => s.setAppDatasets);
   const loadGraph = useWorkflowStore((s) => s.loadGraph);
 
+  // Navigate away on app fetch error
   useEffect(() => {
-    appDatasetRequestVersionRef.current = nextAppDatasetRequestVersion(
-      appDatasetRequestVersionRef.current
-    );
-    const requestVersion = appDatasetRequestVersionRef.current;
-    setApp(null);
-    setWorkflowLoading(true);
+    if (appError) navigate("/");
+  }, [appError, navigate]);
 
+  // Sync workflow data into the workflow store (canvas state migrates in Task 10)
+  useEffect(() => {
     if (!appId) {
       setWorkflowApp("", "");
       loadGraph([], []);
-      setWorkflowLoading(false);
       return;
     }
 
-    getApp(appId)
-      .then(({ data }) => {
-        if (
-          !shouldApplyAppDatasetResponse(
-            appDatasetRequestVersionRef.current,
-            requestVersion
-          )
-        ) {
-          return;
-        }
+    if (!workflow) {
+      // null means no workflow exists yet — start empty
+      setWorkflowApp(appId, "");
+      loadGraph([], []);
+      return;
+    }
 
-        setApp(data);
-      })
-      .catch(() => {
-        if (
-          !shouldApplyAppDatasetResponse(
-            appDatasetRequestVersionRef.current,
-            requestVersion
-          )
-        ) {
-          return;
-        }
+    setWorkflowApp(appId, workflow.id);
+    loadGraph(workflow.graph.nodes, workflow.graph.edges);
+  }, [appId, workflow, setWorkflowApp, loadGraph]);
 
-        navigate("/");
-      });
-
-    getWorkflowByApp(appId)
-      .then(({ data }) => {
-        if (
-          !shouldApplyAppDatasetResponse(
-            appDatasetRequestVersionRef.current,
-            requestVersion
-          )
-        ) {
-          return;
-        }
-
-        if (!data) {
-          setWorkflowApp(appId, "");
-          loadGraph([], []);
-          return;
-        }
-        setWorkflowApp(appId, data.id);
-        loadGraph(data.graph.nodes, data.graph.edges);
-      })
-      .catch(() => {
-        if (
-          !shouldApplyAppDatasetResponse(
-            appDatasetRequestVersionRef.current,
-            requestVersion
-          )
-        ) {
-          return;
-        }
-
-        // No workflow yet — start empty
-        setWorkflowApp(appId, "");
-        loadGraph([], []);
-      })
-      .finally(() => {
-        if (
-          !shouldApplyAppDatasetResponse(
-            appDatasetRequestVersionRef.current,
-            requestVersion
-          )
-        ) {
-          return;
-        }
-
-        setWorkflowLoading(false);
-      });
-  }, [appId, navigate, setWorkflowApp, loadGraph]);
-
+  // Fetch app dataset bindings (will be migrated to a query hook in Task 13)
   useEffect(() => {
-    const requestVersion = appDatasetRequestVersionRef.current;
-    setIsDatasetDrawerOpen(false);
-    setIsRetrievalDebugOpen(false);
     setAppDatasets([]);
 
     if (!appId) {
@@ -124,27 +54,9 @@ export default function AppEditorPage() {
 
     listAppDatasets(appId)
       .then(({ data }) => {
-        if (
-          !shouldApplyAppDatasetResponse(
-            appDatasetRequestVersionRef.current,
-            requestVersion
-          )
-        ) {
-          return;
-        }
-
         setAppDatasets(data);
       })
       .catch(() => {
-        if (
-          !shouldApplyAppDatasetResponse(
-            appDatasetRequestVersionRef.current,
-            requestVersion
-          )
-        ) {
-          return;
-        }
-
         setAppDatasets([]);
       });
   }, [appId, setAppDatasets]);
