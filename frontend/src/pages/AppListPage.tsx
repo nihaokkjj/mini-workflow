@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useApps } from "../queries/apps/useApps";
 import { useCreateApp } from "../queries/apps/useCreateApp";
 import { useDeleteApp } from "../queries/apps/useDeleteApp";
-import type { AppDto } from "../types";
 
 export default function AppListPage() {
   const navigate = useNavigate();
