@@ -25,6 +25,7 @@ import TemplateNodeComponent from "./nodes/TemplateNodeComponent";
 import KnowledgeRetrievalNodeComponent from "./nodes/KnowledgeRetrievalNodeComponent";
 import { NodePalette } from "./palette/NodePalette";
 import { NodeConfigPanel } from "./NodeConfigPanel";
+import { WorkflowRunResultsPanel } from "./WorkflowRunResultsPanel";
 import { useWorkflowStore } from "../../stores/workflow.store";
 import {
   cancelRun,
@@ -368,11 +369,11 @@ function WorkflowCanvasInner() {
         </div>
 
         {/* Output panel */}
-        {output && (
-          <div className="h-40 bg-slate-900 text-green-400 font-mono text-sm p-4 overflow-auto border-t border-slate-700">
-            <pre className="whitespace-pre-wrap">{output}</pre>
-          </div>
-        )}
+        <WorkflowRunResultsPanel
+          nodes={store.nodes}
+          events={store.events}
+          output={output}
+        />
       </div>
       <NodeConfigPanel />
       {toast && (

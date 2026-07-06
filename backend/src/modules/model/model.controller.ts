@@ -10,6 +10,7 @@ const DEFAULT_MODELS: ModelDto[] = [
   { id: "deepseek-chat", name: "DeepSeek-Chat" },
   { id: "deepseek-reasoner", name: "DeepSeek-Reasoner" },
   { id: "kimi-latest", name: "kimi-latest" },
+  { id: "gpt-5.4", name: "GPT-5.4" },
 ];
 
 @ApiTags("模型管理")

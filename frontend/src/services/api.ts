@@ -8,6 +8,8 @@ import type {
   GraphEngineEvent,
   MessageDto,
   ModelDto,
+  RetrieveRequestDto,
+  RetrievalResultDto,
   RunDto,
   WorkflowDto,
 } from "../types";
@@ -20,8 +22,10 @@ const API_BASE_URL = (
 const api = axios.create({ baseURL: API_BASE_URL });
 
 // Apps
-export const createApp = (name: string, mode: "chat" | "workflow" = "chat") =>
-  api.post<AppDto>("/apps", { name, mode });
+export const createApp = (
+  name: string,
+  mode: "chat" | "workflow" = "workflow"
+) => api.post<AppDto>("/apps", { name, mode });
 export const listApps = () => api.get<AppDto[]>("/apps");
 export const getApp = (id: string) => api.get<AppDto>(`/apps/${id}`);
 export const deleteApp = (id: string) => api.delete(`/apps/${id}`);
@@ -102,6 +106,12 @@ export const listModels = () => api.get<ModelDto[]>("/models");
 export const listDatasets = () => api.get<DatasetDto[]>("/rag/datasets");
 export const listAppDatasets = (appId: string) =>
   api.get<AppDatasetBindingDto[]>(`/apps/${appId}/datasets`);
+export const debugRetrieve = (input: RetrieveRequestDto) =>
+  api.post<RetrievalResultDto>("/rag/retrieve", input);
+export const bindAppDataset = (appId: string, datasetId: string) =>
+  api.post<AppDatasetBindingDto>(`/apps/${appId}/datasets/${datasetId}`);
+export const unbindAppDataset = (appId: string, datasetId: string) =>
+  api.delete(`/apps/${appId}/datasets/${datasetId}`);
 
 // Conversations
 export const createConversation = (appId: string) =>

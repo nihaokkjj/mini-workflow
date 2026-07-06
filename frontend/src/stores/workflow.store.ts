@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import type { NodeConfig, EdgeConfig, GraphEngineEvent } from "../types";
+import type {
+  AppDatasetBindingDto,
+  NodeConfig,
+  EdgeConfig,
+  GraphEngineEvent,
+} from "../types";
 import {
   addEdge,
   applyNodeChanges,
@@ -14,12 +19,14 @@ interface WorkflowState {
   edges: EdgeConfig[];
   appId: string | null;
   workflowId: string | null;
+  appDatasets: AppDatasetBindingDto[];
   executingNodeId: string | null;
   events: GraphEngineEvent[];
   isRunning: boolean;
   outputs: Record<string, unknown> | null;
 
   setApp: (appId: string, workflowId: string) => void;
+  setAppDatasets: (datasets: AppDatasetBindingDto[]) => void;
   loadGraph: (nodes: NodeConfig[], edges: EdgeConfig[]) => void;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -39,12 +46,14 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   edges: [],
   appId: null,
   workflowId: null,
+  appDatasets: [],
   executingNodeId: null,
   events: [],
   isRunning: false,
   outputs: null,
 
   setApp: (appId, workflowId) => set({ appId, workflowId }),
+  setAppDatasets: (appDatasets) => set({ appDatasets }),
 
   loadGraph: (nodes, edges) => set({ nodes, edges }),
 

@@ -51,7 +51,7 @@ export const projectOperationGuide: GuideDocument = {
             "进入首页 /",
             "在输入框填写 App 名称",
             "点击 Create App",
-            "系统会跳转到这个 App 的聊天页",
+            "系统会跳转到这个 App 的工作流编辑页",
           ],
         },
         {
@@ -64,9 +64,8 @@ export const projectOperationGuide: GuideDocument = {
           code: '{\n  "name": "客服助手",\n  "description": "用于问答与流程验证",\n  "mode": "workflow"\n}',
         },
         {
-          type: "note",
-          tone: "warn",
-          text: "当前前端创建 App 时默认提交的是 chat 模式，但这个 App 仍然可以进入工作流编辑页继续编排。",
+          type: "paragraph",
+          text: "当前前端创建 App 时默认提交 workflow 模式，并直接进入工作流编辑页继续编排。",
         },
       ],
     },
@@ -192,12 +191,11 @@ export const projectOperationGuide: GuideDocument = {
       blocks: [
         {
           type: "paragraph",
-          text: "Knowledge 节点支持 Query Template、Retrieval Mode、Dataset IDs、Top K 和 Score Threshold。Dataset IDs 留空时，会自动使用当前 App 已绑定的全部知识库。",
+          text: "Knowledge 节点支持 Query Template、Retrieval Mode、Dataset 选择、Top K 和 Score Threshold。留空时，会自动使用当前 App 已绑定的全部知识库。",
         },
         {
-          type: "note",
-          tone: "warn",
-          text: "当前前端没有知识库管理页面。如果要跑通 Knowledge 节点，需要先通过后端接口创建知识库、导入文档，再把知识库绑定到 App。",
+          type: "paragraph",
+          text: "应用编辑页右上角的 Datasets 面板可以查看和管理当前 App 绑定的知识库。先绑定，再到 Knowledge 节点里选择特定知识库；如果不选，则默认使用全部绑定知识库。",
         },
         {
           type: "list",

@@ -11,12 +11,14 @@
     "dev:backend": "pnpm --filter @mini-dify/backend dev",
     "dev:frontend": "pnpm --filter @mini-dify/frontend dev",
     "dev": "pnpm run --parallel dev:backend dev:frontend",
+    "daily-summary:run": "zsh scripts/run-codex-daily-summary.sh --force",
+    "daily-summary:install": "zsh scripts/install-codex-daily-summary-cron.sh",
     "build:shared": "pnpm --filter @mini-dify/shared build",
     "build:backend": "pnpm --filter @mini-dify/backend build",
     "build:frontend": "pnpm --filter @mini-dify/frontend build",
     "build": "pnpm build:shared && pnpm build:backend && pnpm build:frontend",
     "typecheck": "pnpm --filter @mini-dify/shared type-check && pnpm --filter @mini-dify/backend type-check && pnpm --filter @mini-dify/frontend type-check",
-    "test": "pnpm --filter @mini-dify/backend exec node --import tsx --test src/core/nodes/*.spec.ts",
+    "test": "pnpm --filter @mini-dify/backend exec node --require ts-node/register --test \"src/**/*.spec.ts\" && pnpm --filter @mini-dify/backend exec node --import tsx --test \"../frontend/src/**/*.spec.ts\" \"../frontend/src/**/*.spec.tsx\"",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -34,8 +34,8 @@ export default function AppListPage() {
   const handleCreate = async () => {
     if (!name.trim()) return;
     try {
-      const { data } = await createApp(name);
-      navigate(`/app/${data.id}/chat`);
+      const { data } = await createApp(name, "workflow");
+      navigate(`/app/${data.id}`);
     } catch {
       showToast("Failed to create app");
     }

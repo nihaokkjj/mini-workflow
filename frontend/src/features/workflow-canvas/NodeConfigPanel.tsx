@@ -1,7 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { listAppDatasets } from "../../services/api";
+import { type ReactNode } from "react";
 import { useWorkflowStore } from "../../stores/workflow.store";
-import type { AppDatasetBindingDto, NodeType } from "../../types";
+import type { NodeType } from "../../types";
+import {
+  clearExplicitDatasetSelection,
+  readSelectedDatasetIds,
+  toggleExplicitDatasetSelection,
+} from "./knowledge-retrieval-config.model";
 
 interface SupportedModelOption {
   id: string;
@@ -20,6 +24,12 @@ const SUPPORTED_LLM_MODELS: SupportedModelOption[] = [
   {
     id: "gpt-4.1-mini",
     name: "OpenAI GPT-4.1 mini",
+    provider: "OpenAI",
+    baseURL: "https://api.openai.com/v1",
+  },
+  {
+    id: "gpt-5.4",
+    name: "OpenAI GPT-5.4",
     provider: "OpenAI",
     baseURL: "https://api.openai.com/v1",
   },
@@ -330,32 +340,20 @@ function TemplateConfig({
 }
 
 function KnowledgeRetrievalConfig({
-  appId,
+  bindings,
   data,
   onChange,
 }: {
-  appId: string | null;
+  bindings: ReturnType<typeof useWorkflowStore.getState>["appDatasets"];
   data: Record<string, unknown>;
   onChange: (d: Record<string, unknown>) => void;
 }) {
-  const [bindings, setBindings] = useState<AppDatasetBindingDto[]>([]);
-
-  useEffect(() => {
-    if (!appId) {
-      setBindings([]);
-      return;
-    }
-
-    listAppDatasets(appId)
-      .then(({ data }) => setBindings(data))
-      .catch(() => setBindings([]));
-  }, [appId]);
-
-  const selectedDatasetIds = Array.isArray(data.datasetIds)
-    ? data.datasetIds.filter(
-        (value): value is string => typeof value === "string"
-      )
-    : [];
+  const selectedDatasetIds = readSelectedDatasetIds(data);
+  const boundDatasetIds = new Set(bindings.map((binding) => binding.datasetId));
+  const staleDatasetIds = selectedDatasetIds.filter(
+    (datasetId) => !boundDatasetIds.has(datasetId)
+  );
+  const isUsingAllBoundDatasets = selectedDatasetIds.length === 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -380,39 +378,76 @@ function KnowledgeRetrievalConfig({
           <option value="hybrid">hybrid</option>
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Dataset IDs</span>
-        <input
-          type="text"
-          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
-          placeholder="留空则使用当前应用绑定的全部知识库"
-          value={selectedDatasetIds.join(", ")}
-          onChange={(e) =>
-            onChange({
-              ...data,
-              datasetIds: e.target.value
-                .split(",")
-                .map((value) => value.trim())
-                .filter(Boolean),
-            })
-          }
-        />
-        <span className="text-xs text-slate-400">
-          留空时自动使用当前 app 的绑定知识库。
-        </span>
-      </label>
-      {bindings.length > 0 && (
-        <div className="rounded-md bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
-          <div className="font-medium text-slate-700">当前可用绑定</div>
-          <div className="mt-1 space-y-1">
-            {bindings.map((binding) => (
-              <div key={binding.id} className="font-mono">
-                {binding.dataset.id} · {binding.dataset.name}
-              </div>
-            ))}
+      <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="font-medium text-slate-700">Datasets</div>
+            <p className="mt-1 text-xs text-slate-500">
+              Selecting one or more datasets switches this node to explicit
+              selection. Clearing them all falls back to every bound dataset.
+            </p>
           </div>
+          {!isUsingAllBoundDatasets && (
+            <button
+              type="button"
+              onClick={() => onChange(clearExplicitDatasetSelection(data))}
+              className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-100"
+            >
+              Use all
+            </button>
+          )}
         </div>
-      )}
+        <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+          {isUsingAllBoundDatasets
+            ? `Using all ${bindings.length} bound dataset${bindings.length === 1 ? "" : "s"}`
+            : `Using ${selectedDatasetIds.length} explicitly selected dataset${selectedDatasetIds.length === 1 ? "" : "s"}`}
+        </div>
+        {bindings.length === 0 ? (
+          <div className="rounded-md border border-dashed border-slate-300 bg-white px-3 py-4 text-sm text-slate-500">
+            No dataset is bound to this app yet. Bind one from the editor header
+            first.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {bindings.map((binding) => {
+              const isSelected = selectedDatasetIds.includes(binding.datasetId);
+
+              return (
+                <label
+                  key={binding.id}
+                  className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 bg-white px-3 py-3"
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600"
+                    checked={isSelected}
+                    onChange={() =>
+                      onChange(
+                        toggleExplicitDatasetSelection(data, binding.datasetId)
+                      )
+                    }
+                  />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-700">
+                      {binding.dataset.name}
+                    </div>
+                    <div className="mt-1 truncate font-mono text-[11px] text-slate-400">
+                      {binding.datasetId}
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        )}
+        {staleDatasetIds.length > 0 && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            This workflow still references unbound datasets:{" "}
+            {staleDatasetIds.join(", ")}. Clear them or re-bind them before
+            running.
+          </div>
+        )}
+      </div>
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium text-slate-700">Top K</span>
         <input
@@ -480,7 +515,7 @@ const configRenderers: Record<
   (
     data: Record<string, unknown>,
     onChange: (d: Record<string, unknown>) => void,
-    appId: string | null
+    appDatasets: ReturnType<typeof useWorkflowStore.getState>["appDatasets"]
   ) => ReactNode
 > = {
   start: (d, o) => <StartConfig data={d} onChange={o} />,
@@ -490,8 +525,8 @@ const configRenderers: Record<
   http: (d, o) => <HttpConfig data={d} onChange={o} />,
   code: (d, o) => <CodeConfig data={d} onChange={o} />,
   template: (d, o) => <TemplateConfig data={d} onChange={o} />,
-  "knowledge-retrieval": (d, o, appId) => (
-    <KnowledgeRetrievalConfig appId={appId} data={d} onChange={o} />
+  "knowledge-retrieval": (d, o, appDatasets) => (
+    <KnowledgeRetrievalConfig bindings={appDatasets} data={d} onChange={o} />
   ),
   iteration: placeholderConfig,
 };
@@ -501,7 +536,7 @@ export function NodeConfigPanel() {
   const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
   const selectNode = useWorkflowStore((s) => s.selectNode);
   const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
-  const appId = useWorkflowStore((s) => s.appId);
+  const appDatasets = useWorkflowStore((s) => s.appDatasets);
 
   if (!selectedNodeId) return null;
 
@@ -529,7 +564,7 @@ export function NodeConfigPanel() {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        {renderer(node.data, handleChange, appId)}
+        {renderer(node.data, handleChange, appDatasets)}
       </div>
       <div className="px-4 py-3 border-t border-slate-200 text-xs text-slate-400">
         Node ID: <code className="text-slate-600">{node.id}</code>

@@ -95,6 +95,66 @@ export interface AppDatasetBindingDto {
   dataset: DatasetDto;
 }
 
+export interface RetrievalHitDto {
+  segmentId: string;
+  score: number;
+}
+
+export interface RetrievalDroppedHitDto extends RetrievalHitDto {
+  reason: "score_below_threshold";
+}
+
+export interface RetrievalSourceDto {
+  title: string;
+  content: string;
+  datasetId: string;
+  datasetName: string;
+  documentId: string;
+  documentName: string;
+  segmentId: string;
+  score: number;
+  position: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RetrievalPlanDto {
+  retrievalMode: "keyword" | "semantic" | "hybrid";
+  topK: number;
+  scoreThreshold: number;
+  candidateK: number;
+  contextBudgetTokens: number;
+  enableQueryRewrite: boolean;
+}
+
+export interface RetrievalTraceDto {
+  requestedDatasetIds: string[];
+  availableDatasetIds: string[];
+  selectedDatasetIds: string[];
+  usedExplicitSelection: boolean;
+  plan: RetrievalPlanDto;
+  rawHits: RetrievalHitDto[];
+  filteredHits: RetrievalHitDto[];
+  droppedHits: RetrievalDroppedHitDto[];
+}
+
+export interface RetrievalResultDto {
+  query: string;
+  context: string;
+  sourceCount: number;
+  sources: RetrievalSourceDto[];
+  hits: RetrievalHitDto[];
+  trace: RetrievalTraceDto;
+}
+
+export interface RetrieveRequestDto {
+  appId: string;
+  query: string;
+  datasetIds?: string[];
+  topK?: number;
+  scoreThreshold?: number;
+  retrievalMode?: "keyword" | "semantic" | "hybrid";
+}
+
 export type GraphEngineEvent =
   | {
       event: "node_start";
