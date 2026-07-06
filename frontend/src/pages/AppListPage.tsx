@@ -1,40 +1,32 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { listApps, createApp, deleteApp } from "../services/api";
+import { useApps } from "../queries/apps/useApps";
+import { useCreateApp } from "../queries/apps/useCreateApp";
+import { useDeleteApp } from "../queries/apps/useDeleteApp";
 import type { AppDto } from "../types";
 
 export default function AppListPage() {
-  const [apps, setApps] = useState<AppDto[]>([]);
+  const navigate = useNavigate();
+  const { data: appsResp, isLoading, error } = useApps();
+  const createApp = useCreateApp();
+  const deleteApp = useDeleteApp();
   const [name, setName] = useState("");
   const [toDelete, setToDelete] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const showToast = (text: string) => {
     setToast(text);
     window.setTimeout(() => setToast(null), 2600);
   };
 
-  const load = async () => {
-    try {
-      const { data } = await listApps();
-      setApps(data);
-    } catch {
-      showToast("Failed to load apps");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    load();
-  }, []);
+    if (error) showToast(error.message || "Failed to load apps");
+  }, [error]);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     try {
-      const { data } = await createApp(name, "workflow");
+      const { data } = await createApp.mutateAsync({ name, mode: "workflow" });
       navigate(`/app/${data.id}`);
     } catch {
       showToast("Failed to create app");
@@ -44,9 +36,8 @@ export default function AppListPage() {
   const confirmDelete = async () => {
     if (!toDelete) return;
     try {
-      await deleteApp(toDelete);
+      await deleteApp.mutateAsync(toDelete);
       setToDelete(null);
-      load();
     } catch {
       showToast("Failed to delete app");
     }
@@ -105,7 +96,7 @@ export default function AppListPage() {
 
       {!isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {apps.map((app) => (
+          {(appsResp?.data ?? []).map((app) => (
             <div
               key={app.id}
               className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col"
@@ -152,7 +143,7 @@ export default function AppListPage() {
         </div>
       )}
 
-      {!isLoading && apps.length === 0 && (
+      {!isLoading && (appsResp?.data ?? []).length === 0 && (
         <div className="text-center text-slate-400 py-12">
           No apps yet. Create one above.
         </div>
