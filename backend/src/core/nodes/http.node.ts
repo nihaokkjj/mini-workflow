@@ -1,12 +1,18 @@
 import { BaseNode } from "./base.node";
 import { NodeType, GraphEngineEvent } from "../../types";
+import { validateHttpNodeTarget } from "./http-node-ssrf-guard";
 
 export class HttpNode extends BaseNode {
   readonly nodeType: NodeType = "http";
 
   async *run(): AsyncGenerator<GraphEngineEvent> {
     const nodeId = this.config.id;
-    yield { event: "node_start", nodeId, nodeType: "http", timestamp: Date.now() };
+    yield {
+      event: "node_start",
+      nodeId,
+      nodeType: "http",
+      timestamp: Date.now(),
+    };
 
     const data = this.config.data;
     const method = ((data.method as string) || "GET").toUpperCase();
@@ -14,7 +20,25 @@ export class HttpNode extends BaseNode {
     const timeout = (data.timeout as number) || 30000;
 
     if (!url) {
-      yield { event: "error", nodeId, nodeType: "http", message: "HTTP node url is empty", timestamp: Date.now() };
+      yield {
+        event: "error",
+        nodeId,
+        nodeType: "http",
+        message: "HTTP node url is empty",
+        timestamp: Date.now(),
+      };
+      return;
+    }
+
+    const ssrfError = await validateHttpNodeTarget(url);
+    if (ssrfError) {
+      yield {
+        event: "error",
+        nodeId,
+        nodeType: "http",
+        message: ssrfError,
+        timestamp: Date.now(),
+      };
       return;
     }
 
@@ -24,12 +48,17 @@ export class HttpNode extends BaseNode {
       headers[key] = this.resolveTemplate(value);
     }
 
-    const rawBody = data.body ? this.resolveTemplate(String(data.body)) : undefined;
+    const rawBody = data.body
+      ? this.resolveTemplate(String(data.body))
+      : undefined;
 
     try {
       const controller = new AbortController();
-      const abortFromRun = () => controller.abort(this.context.abortSignal?.reason);
-      this.context.abortSignal?.addEventListener("abort", abortFromRun, { once: true });
+      const abortFromRun = () =>
+        controller.abort(this.context.abortSignal?.reason);
+      this.context.abortSignal?.addEventListener("abort", abortFromRun, {
+        once: true,
+      });
       const timer = setTimeout(() => controller.abort(), timeout);
       const res = await fetch(url, {
         method,
@@ -61,10 +90,17 @@ export class HttpNode extends BaseNode {
       const reason = this.context.abortSignal?.aborted
         ? this.context.abortSignal.reason
         : undefined;
-      const message = reason instanceof Error
-        ? reason.message
-        : `HTTP request failed: ${err.message}`;
-      yield { event: "error", nodeId, nodeType: "http", message, timestamp: Date.now() };
+      const message =
+        reason instanceof Error
+          ? reason.message
+          : `HTTP request failed: ${err.message}`;
+      yield {
+        event: "error",
+        nodeId,
+        nodeType: "http",
+        message,
+        timestamp: Date.now(),
+      };
     }
   }
 }

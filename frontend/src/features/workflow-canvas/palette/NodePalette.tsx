@@ -1,18 +1,46 @@
 import type { NodeType } from "../../../types";
 
 const NODE_TEMPLATES: { type: NodeType; label: string; color: string }[] = [
-  { type: "start", label: "Start", color: "bg-emerald-100 border-emerald-400" },
-  { type: "llm", label: "LLM", color: "bg-violet-100 border-violet-400" },
-  { type: "if-else", label: "If/Else", color: "bg-amber-100 border-amber-400" },
-  { type: "http", label: "HTTP", color: "bg-sky-100 border-sky-400" },
-  { type: "code", label: "Code", color: "bg-slate-100 border-slate-500" },
-  { type: "template", label: "Template", color: "bg-pink-100 border-pink-400" },
+  {
+    type: "start",
+    label: "Start",
+    color: "border-node-start text-node-start bg-node-start/10",
+  },
+  {
+    type: "llm",
+    label: "LLM",
+    color: "border-node-llm text-node-llm bg-node-llm/10",
+  },
+  {
+    type: "if-else",
+    label: "If/Else",
+    color: "border-node-condition text-node-condition bg-node-condition/10",
+  },
+  {
+    type: "http",
+    label: "HTTP",
+    color: "border-node-retrieval text-node-retrieval bg-node-retrieval/10",
+  },
+  {
+    type: "code",
+    label: "Code",
+    color: "border-node-code text-node-code bg-node-code/10",
+  },
+  {
+    type: "template",
+    label: "Template",
+    color: "border-white/30 text-white/60 bg-white/5",
+  },
   {
     type: "knowledge-retrieval",
     label: "Knowledge",
-    color: "bg-teal-100 border-teal-400",
+    color: "border-node-retrieval text-node-retrieval bg-node-retrieval/10",
   },
-  { type: "end", label: "End", color: "bg-red-100 border-red-400" },
+  {
+    type: "end",
+    label: "End",
+    color: "border-node-end text-node-end bg-node-end/10",
+  },
 ];
 
 export function NodePalette() {
@@ -22,14 +50,16 @@ export function NodePalette() {
   };
 
   return (
-    <div className="w-48 bg-white border-r border-slate-200 p-3 flex flex-col gap-2">
-      <h3 className="text-sm font-semibold text-slate-600 mb-1">Nodes</h3>
+    <div className="flex w-48 flex-col gap-2 border-r border-white/8 bg-canvas p-3">
+      <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.8px] text-white/40">
+        Nodes
+      </h3>
       {NODE_TEMPLATES.map((t) => (
         <div
           key={t.type}
           draggable
           onDragStart={(e) => onDragStart(e, t.type)}
-          className={`border-2 rounded-lg px-3 py-2 cursor-grab text-sm font-medium ${t.color} hover:shadow-md transition-shadow`}
+          className={`cursor-grab rounded-lg border px-3 py-2 text-sm font-medium transition hover:brightness-125 ${t.color}`}
         >
           {t.label}
         </div>

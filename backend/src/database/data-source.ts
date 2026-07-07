@@ -16,7 +16,7 @@ const isDev = process.env.NODE_ENV !== "production";
 const dataSource = new DataSource({
   type: "better-sqlite3",
   database: path.join(process.cwd(), isDev ? "dev.db" : "prod.db"),
-  synchronize: true, // Auto-create tables in dev
+  synchronize: isDev, // Only auto-sync in dev; use migrations in production
   logging: false,
   entities: [
     App,

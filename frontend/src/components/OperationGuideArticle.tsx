@@ -6,7 +6,7 @@ import type {
 function renderBlock(block: GuideBlock, key: string) {
   if (block.type === "paragraph") {
     return (
-      <p key={key} className="text-sm leading-7 text-slate-600">
+      <p key={key} className="text-sm leading-7 text-white/60">
         {block.text}
       </p>
     );
@@ -14,10 +14,10 @@ function renderBlock(block: GuideBlock, key: string) {
 
   if (block.type === "list") {
     return (
-      <ul key={key} className="space-y-2 text-sm leading-7 text-slate-600">
+      <ul key={key} className="space-y-2 text-sm leading-7 text-white/60">
         {block.items.map((item) => (
           <li key={item} className="flex gap-3">
-            <span className="mt-2 h-1.5 w-1.5 rounded-full bg-sky-500" />
+            <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
             <span>{item}</span>
           </li>
         ))}
@@ -29,7 +29,7 @@ function renderBlock(block: GuideBlock, key: string) {
     return (
       <pre
         key={key}
-        className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 px-4 py-4 text-xs leading-6 text-slate-100 shadow-inner"
+        className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0d0d14] px-4 py-4 text-xs leading-6 text-white/70"
       >
         <code>{block.code}</code>
       </pre>
@@ -38,8 +38,8 @@ function renderBlock(block: GuideBlock, key: string) {
 
   const toneClass =
     block.tone === "warn"
-      ? "border-amber-200 bg-amber-50 text-amber-900"
-      : "border-sky-200 bg-sky-50 text-sky-900";
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+      : "border-accent/30 bg-accent/10 text-accent";
 
   return (
     <div
@@ -59,14 +59,14 @@ export function OperationGuideArticle({
   return (
     <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-8 lg:self-start">
-        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur">
-          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
+        <div className="rounded-[28px] border border-white/8 bg-white/[0.03] p-5 backdrop-blur-2xl">
+          <div className="text-xs font-semibold uppercase tracking-[0.8px] text-accent">
             Guide
           </div>
-          <h1 className="mt-3 text-2xl font-semibold text-slate-900">
+          <h1 className="mt-3 font-display text-2xl font-bold text-white">
             {document.title}
           </h1>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
+          <p className="mt-3 text-sm leading-7 text-white/50">
             {document.intro}
           </p>
           <nav className="mt-6 space-y-2">
@@ -74,7 +74,7 @@ export function OperationGuideArticle({
               <a
                 key={section.id}
                 href={`#${section.id}`}
-                className="block rounded-xl px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                className="block rounded-xl px-3 py-2 text-sm text-white/50 transition hover:bg-white/5 hover:text-white"
               >
                 {section.title}
               </a>
@@ -88,13 +88,13 @@ export function OperationGuideArticle({
           <section
             key={section.id}
             id={section.id}
-            className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-[28px] border border-white/8 bg-white/[0.03] p-6 backdrop-blur-2xl"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white font-mono text-sm font-semibold text-black">
                 {index + 1}
               </div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-semibold text-white">
                 {section.title}
               </h2>
             </div>

@@ -3,19 +3,20 @@ import { Handle, Position } from "@xyflow/react";
 
 function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
   const condition = (data.condition as string) || "No condition set";
-  const preview = condition.length > 40 ? condition.slice(0, 40) + "..." : condition;
+  const preview =
+    condition.length > 40 ? condition.slice(0, 40) + "..." : condition;
 
   return (
-    <div className="bg-amber-50 border-2 border-amber-400 rounded-lg px-4 py-3 min-w-[180px] shadow-sm">
+    <div className="min-w-[180px] rounded-lg border border-node-condition bg-node-condition/10 px-4 py-3">
       <Handle type="target" position={Position.Top} />
-      <div className="flex items-center gap-2 mb-1">
+      <div className="mb-1 flex items-center gap-2">
         <span className="text-lg">🔀</span>
-        <span className="font-semibold text-amber-800">If/Else</span>
+        <span className="font-semibold text-node-condition">If/Else</span>
       </div>
-      <div className="text-xs text-slate-500 bg-amber-100 rounded px-2 py-1 font-mono">
+      <div className="rounded bg-black/20 px-2 py-1 font-mono text-xs text-white/50">
         {preview}
       </div>
-      <div className="flex justify-between mt-2">
+      <div className="mt-2 flex justify-between">
         <div className="relative">
           <Handle
             type="source"
@@ -23,7 +24,9 @@ function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
             id="true"
             style={{ left: "30%" }}
           />
-          <span className="text-[10px] text-green-600 font-semibold absolute -bottom-4 left-[20%]">TRUE</span>
+          <span className="absolute -bottom-4 left-[20%] text-[10px] font-semibold text-node-code">
+            TRUE
+          </span>
         </div>
         <div className="relative">
           <Handle
@@ -32,7 +35,9 @@ function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
             id="false"
             style={{ left: "70%" }}
           />
-          <span className="text-[10px] text-red-500 font-semibold absolute -bottom-4 right-[20%]">FALSE</span>
+          <span className="absolute -bottom-4 right-[20%] text-[10px] font-semibold text-node-end">
+            FALSE
+          </span>
         </div>
       </div>
     </div>

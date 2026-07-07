@@ -3,14 +3,14 @@ import { Handle, Position } from "@xyflow/react";
 
 function LLMNodeComponent({ data }: { data: Record<string, unknown> }) {
   return (
-    <div className="bg-violet-50 border-2 border-violet-400 rounded-lg px-4 py-3 min-w-[180px] shadow-sm">
+    <div className="min-w-[180px] rounded-lg border border-node-llm bg-node-llm/10 px-4 py-3">
       <Handle type="target" position={Position.Top} />
       <Handle type="source" position={Position.Bottom} />
       <div className="flex items-center gap-2">
         <span className="text-lg">🤖</span>
-        <span className="font-semibold text-violet-800">LLM</span>
+        <span className="font-semibold text-node-llm">LLM</span>
       </div>
-      <div className="text-xs text-slate-500 mt-1">
+      <div className="mt-1 text-xs text-white/40">
         {(data.model as string) || "gpt-4o-mini"}
       </div>
     </div>

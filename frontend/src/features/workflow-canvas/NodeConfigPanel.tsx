@@ -1,6 +1,5 @@
 import { type ReactNode } from "react";
-import { useWorkflowStore } from "../../stores/workflow.store";
-import type { NodeType } from "../../types";
+import type { NodeType, NodeConfig, AppDatasetBindingDto } from "../../types";
 import {
   clearExplicitDatasetSelection,
   readSelectedDatasetIds,
@@ -53,6 +52,13 @@ const SUPPORTED_LLM_MODELS: SupportedModelOption[] = [
   },
 ];
 
+/* ---------- Shared input classes for dark theme ---------- */
+const inputClass =
+  "rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10 transition";
+const labelClass =
+  "text-xs font-semibold uppercase tracking-[0.8px] text-white/50";
+const hintClass = "text-xs text-white/30";
+
 function StartConfig({
   data,
   onChange,
@@ -62,10 +68,10 @@ function StartConfig({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Input Fields (JSON)</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Input Fields (JSON)</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-24"
+          className={`${inputClass} h-24 font-mono text-xs`}
           value={JSON.stringify(data.inputs ?? [], null, 2)}
           onChange={(e) => {
             try {
@@ -76,9 +82,9 @@ function StartConfig({
           }}
         />
       </label>
-      <p className="text-xs text-slate-400">
-        Format: [
-        {`{"variable": "query", "label": "User Query", "type": "text-input"}`}]
+      <p className={hintClass}>
+        Format: [{"{"}"variable": "query", "label": "User Query", "type":
+        "text-input"{"}"}]
       </p>
     </div>
   );
@@ -118,20 +124,15 @@ function LLMConfig({
     const nextOption =
       SUPPORTED_LLM_MODELS.find((model) => model.id === modelId) ??
       SUPPORTED_LLM_MODELS[0];
-
-    onChange({
-      ...data,
-      model: modelId,
-      baseURL: nextOption?.baseURL ?? "",
-    });
+    onChange({ ...data, model: modelId, baseURL: nextOption?.baseURL ?? "" });
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Model</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Model</span>
         <select
-          className="border border-slate-300 rounded-md p-2 text-sm"
+          className={`${inputClass} bg-black/50`}
           value={selectedModel}
           onChange={(e) => handleModelChange(e.target.value)}
         >
@@ -141,51 +142,44 @@ function LLMConfig({
             </option>
           ))}
         </select>
-        <span className="text-xs text-slate-400">
-          Supported provider: {selectedOption?.provider ?? "OpenAI-compatible"}
+        <span className={hintClass}>
+          Provider: {selectedOption?.provider ?? "OpenAI-compatible"}
         </span>
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">API Key</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>API Key</span>
         <input
           type="password"
-          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
+          className={`${inputClass} font-mono`}
           placeholder="sk-..."
           value={(data.apiKey as string) || ""}
           onChange={(e) => onChange({ ...data, apiKey: e.target.value })}
         />
-        <span className="text-xs text-slate-400">
-          Select a supported model first, then paste the provider API key here.
-        </span>
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Base URL</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Base URL</span>
         <input
           type="text"
-          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
+          className={`${inputClass} font-mono`}
           placeholder="https://api.openai.com/v1"
           value={configuredBaseURL}
           onChange={(e) => onChange({ ...data, baseURL: e.target.value })}
         />
-        <span className="text-xs text-slate-400">
-          Defaults to the selected provider endpoint and can be overridden for
-          proxies or compatible gateways.
-        </span>
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">System Prompt</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>System Prompt</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs h-20"
+          className={`${inputClass} h-20 text-xs`}
           value={
             (data.systemPrompt as string) || "You are a helpful assistant."
           }
           onChange={(e) => onChange({ ...data, systemPrompt: e.target.value })}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">User Prompt</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>User Prompt</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs h-20"
+          className={`${inputClass} h-20 text-xs`}
           placeholder="e.g. {{start.query}}"
           value={(data.userPrompt as string) || ""}
           onChange={(e) => onChange({ ...data, userPrompt: e.target.value })}
@@ -204,17 +198,17 @@ function IfElseConfig({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Condition Expression</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Condition Expression</span>
         <input
           type="text"
-          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
+          className={`${inputClass} font-mono`}
           placeholder="e.g. {{llm-1.text}} > 0.5"
           value={(data.condition as string) || ""}
           onChange={(e) => onChange({ ...data, condition: e.target.value })}
         />
       </label>
-      <p className="text-xs text-slate-400">
+      <p className={hintClass}>
         Supported operators: == != &gt; &lt; &gt;= &lt;= contains
         <br />
         Use {"{{nodeId.field}}"} to reference upstream values.
@@ -232,10 +226,10 @@ function HttpConfig({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Method</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Method</span>
         <select
-          className="border border-slate-300 rounded-md p-2 text-sm"
+          className={`${inputClass} bg-black/50`}
           value={(data.method as string) || "GET"}
           onChange={(e) => onChange({ ...data, method: e.target.value })}
         >
@@ -243,20 +237,20 @@ function HttpConfig({
           <option value="POST">POST</option>
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">URL</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>URL</span>
         <input
           type="text"
-          className="border border-slate-300 rounded-md p-2 text-sm font-mono"
+          className={`${inputClass} font-mono`}
           placeholder="https://api.example.com/{{start.query}}"
           value={(data.url as string) || ""}
           onChange={(e) => onChange({ ...data, url: e.target.value })}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Headers (JSON)</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Headers (JSON)</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-20"
+          className={`${inputClass} h-20 font-mono text-xs`}
           placeholder='{"Authorization": "Bearer {{token}}"}'
           value={JSON.stringify(data.headers || {}, null, 2)}
           onChange={(e) => {
@@ -268,19 +262,19 @@ function HttpConfig({
           }}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Body</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Body</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-20"
+          className={`${inputClass} h-20 font-mono text-xs`}
           value={(data.body as string) || ""}
           onChange={(e) => onChange({ ...data, body: e.target.value })}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Timeout (ms)</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Timeout (ms)</span>
         <input
           type="number"
-          className="border border-slate-300 rounded-md p-2 text-sm"
+          className={inputClass}
           value={(data.timeout as number) || 30000}
           onChange={(e) =>
             onChange({ ...data, timeout: Number(e.target.value) })
@@ -300,18 +294,19 @@ function CodeConfig({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">JavaScript Code</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>JavaScript Code</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-48"
+          className={`${inputClass} h-48 font-mono text-xs`}
           placeholder="return $inputs.query.toUpperCase();"
           value={(data.code as string) || ""}
           onChange={(e) => onChange({ ...data, code: e.target.value })}
         />
       </label>
-      <p className="text-xs text-slate-400">
-        Use <code className="bg-slate-100 px-1">$inputs</code> to access mapped
-        input variables.
+      <p className={hintClass}>
+        Use{" "}
+        <code className="rounded bg-white/10 px-1 text-white/50">$inputs</code>{" "}
+        to access mapped input variables.
       </p>
     </div>
   );
@@ -326,10 +321,10 @@ function TemplateConfig({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Template</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Template</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-32"
+          className={`${inputClass} h-32 font-mono text-xs`}
           placeholder="Hello {{start.query}}!"
           value={(data.template as string) || ""}
           onChange={(e) => onChange({ ...data, template: e.target.value })}
@@ -344,7 +339,7 @@ function KnowledgeRetrievalConfig({
   data,
   onChange,
 }: {
-  bindings: ReturnType<typeof useWorkflowStore.getState>["appDatasets"];
+  bindings: AppDatasetBindingDto[];
   data: Record<string, unknown>;
   onChange: (d: Record<string, unknown>) => void;
 }) {
@@ -357,19 +352,19 @@ function KnowledgeRetrievalConfig({
 
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Query Template</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Query Template</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs h-20"
+          className={`${inputClass} h-20 text-xs`}
           placeholder="{{start-1.query}}"
           value={(data.queryTemplate as string) || "{{start-1.query}}"}
           onChange={(e) => onChange({ ...data, queryTemplate: e.target.value })}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Retrieval Mode</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Retrieval Mode</span>
         <select
-          className="border border-slate-300 rounded-md p-2 text-sm"
+          className={`${inputClass} bg-black/50`}
           value={(data.retrievalMode as string) || "keyword"}
           onChange={(e) => onChange({ ...data, retrievalMode: e.target.value })}
         >
@@ -378,32 +373,32 @@ function KnowledgeRetrievalConfig({
           <option value="hybrid">hybrid</option>
         </select>
       </label>
-      <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-white/[0.03] p-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="font-medium text-slate-700">Datasets</div>
-            <p className="mt-1 text-xs text-slate-500">
-              Selecting one or more datasets switches this node to explicit
-              selection. Clearing them all falls back to every bound dataset.
+            <div className="text-sm font-medium text-white/80">Datasets</div>
+            <p className="mt-1 text-xs text-white/40">
+              Selecting one or more datasets switches to explicit selection.
+              Clear them all to use every bound dataset.
             </p>
           </div>
           {!isUsingAllBoundDatasets && (
             <button
               type="button"
               onClick={() => onChange(clearExplicitDatasetSelection(data))}
-              className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-100"
+              className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-white/60 ring-1 ring-white/15 hover:bg-white/20"
             >
               Use all
             </button>
           )}
         </div>
-        <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+        <div className="rounded-md border border-white/8 bg-black/20 px-3 py-2 text-xs text-white/50">
           {isUsingAllBoundDatasets
             ? `Using all ${bindings.length} bound dataset${bindings.length === 1 ? "" : "s"}`
             : `Using ${selectedDatasetIds.length} explicitly selected dataset${selectedDatasetIds.length === 1 ? "" : "s"}`}
         </div>
         {bindings.length === 0 ? (
-          <div className="rounded-md border border-dashed border-slate-300 bg-white px-3 py-4 text-sm text-slate-500">
+          <div className="rounded-md border border-dashed border-white/10 bg-black/20 px-3 py-4 text-sm text-white/40">
             No dataset is bound to this app yet. Bind one from the editor header
             first.
           </div>
@@ -411,15 +406,14 @@ function KnowledgeRetrievalConfig({
           <div className="space-y-2">
             {bindings.map((binding) => {
               const isSelected = selectedDatasetIds.includes(binding.datasetId);
-
               return (
                 <label
                   key={binding.id}
-                  className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 bg-white px-3 py-3"
+                  className="flex cursor-pointer items-start gap-3 rounded-md border border-white/8 bg-black/20 px-3 py-3"
                 >
                   <input
                     type="checkbox"
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600"
+                    className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/30 accent-accent"
                     checked={isSelected}
                     onChange={() =>
                       onChange(
@@ -428,10 +422,10 @@ function KnowledgeRetrievalConfig({
                     }
                   />
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-slate-700">
+                    <div className="text-sm font-medium text-white/80">
                       {binding.dataset.name}
                     </div>
-                    <div className="mt-1 truncate font-mono text-[11px] text-slate-400">
+                    <div className="mt-1 truncate font-mono text-[11px] text-white/30">
                       {binding.datasetId}
                     </div>
                   </div>
@@ -441,28 +435,28 @@ function KnowledgeRetrievalConfig({
           </div>
         )}
         {staleDatasetIds.length > 0 && (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
             This workflow still references unbound datasets:{" "}
             {staleDatasetIds.join(", ")}. Clear them or re-bind them before
             running.
           </div>
         )}
       </div>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Top K</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Top K</span>
         <input
           type="number"
-          className="border border-slate-300 rounded-md p-2 text-sm"
+          className={inputClass}
           value={(data.topK as number) || 4}
           onChange={(e) => onChange({ ...data, topK: Number(e.target.value) })}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Score Threshold</span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Score Threshold</span>
         <input
           type="number"
           step="0.01"
-          className="border border-slate-300 rounded-md p-2 text-sm"
+          className={inputClass}
           value={(data.scoreThreshold as number) ?? 0.15}
           onChange={(e) =>
             onChange({ ...data, scoreThreshold: Number(e.target.value) })
@@ -482,12 +476,10 @@ function EndConfig({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">
-          Output Mappings (JSON)
-        </span>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>Output Mappings (JSON)</span>
         <textarea
-          className="border border-slate-300 rounded-md p-2 text-xs font-mono h-24"
+          className={`${inputClass} h-24 font-mono text-xs`}
           placeholder='{"result": "llm-1.text"}'
           value={JSON.stringify(data.outputs ?? {}, null, 2)}
           onChange={(e) => {
@@ -499,7 +491,7 @@ function EndConfig({
           }}
         />
       </label>
-      <p className="text-xs text-slate-400">
+      <p className={hintClass}>
         Map output variable names to node field references like {"nodeId.field"}
       </p>
     </div>
@@ -507,7 +499,7 @@ function EndConfig({
 }
 
 const placeholderConfig = () => (
-  <p className="text-sm text-slate-500">Configuration coming soon</p>
+  <p className="text-sm text-white/40">Configuration coming soon</p>
 );
 
 const configRenderers: Record<
@@ -515,7 +507,7 @@ const configRenderers: Record<
   (
     data: Record<string, unknown>,
     onChange: (d: Record<string, unknown>) => void,
-    appDatasets: ReturnType<typeof useWorkflowStore.getState>["appDatasets"]
+    appDatasets: AppDatasetBindingDto[]
   ) => ReactNode
 > = {
   start: (d, o) => <StartConfig data={d} onChange={o} />,
@@ -531,34 +523,40 @@ const configRenderers: Record<
   iteration: placeholderConfig,
 };
 
-export function NodeConfigPanel() {
-  const nodes = useWorkflowStore((s) => s.nodes);
-  const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
-  const selectNode = useWorkflowStore((s) => s.selectNode);
-  const updateNodeData = useWorkflowStore((s) => s.updateNodeData);
-  const appDatasets = useWorkflowStore((s) => s.appDatasets);
+interface NodeConfigPanelProps {
+  nodeId: string;
+  nodes: NodeConfig[];
+  appDatasets: AppDatasetBindingDto[];
+  onUpdateNodeData: (id: string, data: Record<string, unknown>) => void;
+  onClose: () => void;
+}
 
-  if (!selectedNodeId) return null;
-
-  const node = nodes.find((n) => n.id === selectedNodeId);
+export function NodeConfigPanel({
+  nodeId,
+  nodes,
+  appDatasets,
+  onUpdateNodeData,
+  onClose,
+}: NodeConfigPanelProps) {
+  const node = nodes.find((n) => n.id === nodeId);
   if (!node) return null;
 
   const renderer = configRenderers[node.type];
   if (!renderer) return null;
 
   const handleChange = (newData: Record<string, unknown>) => {
-    updateNodeData(node.id, newData);
+    onUpdateNodeData(node.id, newData);
   };
 
   return (
-    <div className="w-80 bg-white border-l border-slate-200 h-full flex flex-col shadow-lg">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-        <h3 className="font-semibold text-sm text-slate-800">
+    <div className="flex h-full w-80 flex-col border-l border-white/8 bg-canvas">
+      <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+        <h3 className="text-sm font-semibold text-white/80">
           {node.type.toUpperCase()} Configuration
         </h3>
         <button
-          onClick={() => selectNode(null)}
-          className="text-slate-400 hover:text-slate-600 text-lg leading-none"
+          onClick={onClose}
+          className="text-lg leading-none text-white/30 transition hover:text-white/70"
         >
           ✕
         </button>
@@ -566,8 +564,8 @@ export function NodeConfigPanel() {
       <div className="flex-1 overflow-y-auto p-4">
         {renderer(node.data, handleChange, appDatasets)}
       </div>
-      <div className="px-4 py-3 border-t border-slate-200 text-xs text-slate-400">
-        Node ID: <code className="text-slate-600">{node.id}</code>
+      <div className="border-t border-white/8 px-4 py-3 text-xs text-white/30">
+        Node ID: <code className="font-mono text-white/50">{node.id}</code>
       </div>
     </div>
   );

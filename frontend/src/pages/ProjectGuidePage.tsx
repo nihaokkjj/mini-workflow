@@ -6,17 +6,17 @@ export default function ProjectGuidePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.16),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]">
+    <div className="min-h-full">
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8">
         <div className="mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
-            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm transition hover:border-slate-400 hover:text-slate-900"
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 backdrop-blur transition hover:border-white/20 hover:text-white"
           >
-            ← 返回首页
+            ← Back
           </button>
-          <div className="text-xs uppercase tracking-[0.26em] text-slate-400">
-            Mini Dify Guide
+          <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
+            AgentForge Guide
           </div>
         </div>
 

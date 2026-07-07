@@ -15,28 +15,28 @@ function HitList({
   emptyText: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 px-3 py-2 text-sm font-medium text-slate-700">
+    <div className="rounded-xl border border-white/8 bg-black/20">
+      <div className="border-b border-white/8 px-3 py-2 text-sm font-medium text-white/70">
         {title}
       </div>
       {hits.length === 0 ? (
-        <div className="px-3 py-3 text-xs text-slate-500">{emptyText}</div>
+        <div className="px-3 py-3 text-xs text-white/40">{emptyText}</div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-white/5">
           {hits.map((hit) => (
             <div
               key={`${hit.segmentId}-${"reason" in hit ? hit.reason : "kept"}`}
               className="flex items-center justify-between gap-3 px-3 py-2 text-xs"
             >
               <div className="min-w-0">
-                <div className="truncate font-mono text-slate-700">
+                <div className="truncate font-mono text-white/70">
                   {hit.segmentId}
                 </div>
                 {"reason" in hit && (
-                  <div className="mt-1 text-amber-600">{hit.reason}</div>
+                  <div className="mt-1 text-amber-400">{hit.reason}</div>
                 )}
               </div>
-              <div className="shrink-0 rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
+              <div className="shrink-0 rounded-full bg-white/5 px-2 py-1 font-medium text-white/50">
                 {hit.score.toFixed(3)}
               </div>
             </div>
@@ -59,34 +59,35 @@ export function RetrievalResultView({
 
   return (
     <div className="space-y-4">
+      {/* Stats */}
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+          <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Query
           </div>
-          <div className="mt-2 text-sm text-slate-800">{result.query}</div>
+          <div className="mt-2 text-sm text-white/70">{result.query}</div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+          <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Retrieval Mode
           </div>
-          <div className="mt-2 text-sm font-semibold text-slate-800">
+          <div className="mt-2 text-sm font-semibold text-white/70">
             {result.trace.plan.retrievalMode}
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+          <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Sources
           </div>
-          <div className="mt-2 text-sm font-semibold text-slate-800">
+          <div className="mt-2 text-sm font-semibold text-white/70">
             {result.sourceCount}
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+          <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Datasets
           </div>
-          <div className="mt-2 text-sm font-semibold text-slate-800">
+          <div className="mt-2 text-sm font-semibold text-white/70">
             {selectedDatasetIds.length}
           </div>
         </div>
@@ -94,18 +95,19 @@ export function RetrievalResultView({
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
-            <div className="text-sm font-medium text-slate-700">
+          {/* Dataset Selection */}
+          <div className="rounded-xl border border-white/8 bg-black/20 px-4 py-4">
+            <div className="text-sm font-medium text-white/70">
               Dataset Selection
             </div>
-            <div className="mt-2 text-xs text-slate-500">
+            <div className="mt-2 text-xs text-white/40">
               {result.trace.usedExplicitSelection
                 ? "Using an explicit dataset selection from the request or node config."
                 : "No explicit dataset selection was provided, so the app's bound datasets were used."}
             </div>
             <div className="mt-3 grid gap-3 md:grid-cols-3">
               <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.8px] text-white/30">
                   Requested
                 </div>
                 <div className="mt-2 space-y-1">
@@ -115,7 +117,7 @@ export function RetrievalResultView({
                   ).map((datasetId) => (
                     <div
                       key={datasetId}
-                      className="truncate rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                      className="truncate rounded-full bg-white/5 px-2 py-1 text-xs text-white/50"
                     >
                       {datasetId}
                     </div>
@@ -123,14 +125,14 @@ export function RetrievalResultView({
                 </div>
               </div>
               <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.8px] text-white/30">
                   Selected
                 </div>
                 <div className="mt-2 space-y-1">
                   {selectedDatasetIds.map((datasetId) => (
                     <div
                       key={datasetId}
-                      className="truncate rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700"
+                      className="truncate rounded-full bg-accent/15 px-2 py-1 text-xs text-accent"
                     >
                       {datasetId}
                     </div>
@@ -138,10 +140,10 @@ export function RetrievalResultView({
                 </div>
               </div>
               <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.8px] text-white/30">
                   Plan
                 </div>
-                <div className="mt-2 space-y-1 text-xs text-slate-600">
+                <div className="mt-2 space-y-1 text-xs text-white/50">
                   <div>topK: {result.trace.plan.topK}</div>
                   <div>candidateK: {result.trace.plan.candidateK}</div>
                   <div>threshold: {result.trace.plan.scoreThreshold}</div>
@@ -150,6 +152,7 @@ export function RetrievalResultView({
             </div>
           </div>
 
+          {/* Hit lists */}
           <div className="grid gap-4 lg:grid-cols-3">
             <HitList
               title="Raw Hits"
@@ -174,32 +177,33 @@ export function RetrievalResultView({
           />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">
+        {/* Sources */}
+        <div className="rounded-xl border border-white/8 bg-black/20">
+          <div className="border-b border-white/8 px-4 py-3 text-sm font-medium text-white/70">
             Sources
           </div>
           {result.sources.length === 0 ? (
-            <div className="px-4 py-4 text-sm text-slate-500">
+            <div className="px-4 py-4 text-sm text-white/40">
               No source survived the retrieval pipeline.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-white/5">
               {result.sources.map((source) => (
                 <div key={source.segmentId} className="px-4 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-slate-800">
+                      <div className="truncate text-sm font-semibold text-white/80">
                         {source.documentName}
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">
+                      <div className="mt-1 text-xs text-white/40">
                         {source.datasetName} · segment {source.position}
                       </div>
                     </div>
-                    <div className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                    <div className="shrink-0 rounded-full bg-white/5 px-2 py-1 text-xs font-medium text-white/50">
                       {source.score.toFixed(3)}
                     </div>
                   </div>
-                  <div className="mt-3 rounded-lg bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-700">
+                  <div className="mt-3 rounded-lg bg-[#0d0d14] px-3 py-3 text-xs leading-5 text-white/60">
                     {source.content}
                   </div>
                 </div>

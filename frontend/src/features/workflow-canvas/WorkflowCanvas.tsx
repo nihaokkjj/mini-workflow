@@ -4,75 +4,46 @@ import {
   Background,
   Controls,
   MiniMap,
-  useNodesState,
-  useEdgesState,
   ReactFlowProvider,
-  type Connection,
   type Node,
-  type Edge,
-  type NodeChange,
-  type EdgeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import StartNodeComponent from "./nodes/StartNodeComponent";
-import EndNodeComponent from "./nodes/EndNodeComponent";
-import LLMNodeComponent from "./nodes/LLMNodeComponent";
-import IfElseNodeComponent from "./nodes/IfElseNodeComponent";
-import HttpNodeComponent from "./nodes/HttpNodeComponent";
-import CodeNodeComponent from "./nodes/CodeNodeComponent";
-import TemplateNodeComponent from "./nodes/TemplateNodeComponent";
-import KnowledgeRetrievalNodeComponent from "./nodes/KnowledgeRetrievalNodeComponent";
 import { NodePalette } from "./palette/NodePalette";
 import { NodeConfigPanel } from "./NodeConfigPanel";
 import { WorkflowRunResultsPanel } from "./WorkflowRunResultsPanel";
-import { useWorkflowStore } from "../../stores/workflow.store";
-import {
-  cancelRun,
-  saveWorkflow,
-  startRun,
-  subscribeToRunStream,
-} from "../../services/api";
-import type { NodeType, GraphEngineEvent } from "../../types";
+import { useRunStore } from "../../stores/run.store";
+import { useCanvasStore } from "../../stores/canvas.store";
+import { useCanvasState } from "./canvas/useCanvasState";
+import { useRunStream } from "./run/useRunStream";
+import { nodeTypes } from "./canvas/nodeTypes";
+import { saveWorkflow } from "../../services/api";
+import type { NodeType, Graph, AppDatasetBindingDto } from "../../types";
 
-const nodeTypes = {
-  start: StartNodeComponent,
-  end: EndNodeComponent,
-  llm: LLMNodeComponent,
-  "if-else": IfElseNodeComponent,
-  http: HttpNodeComponent,
-  code: CodeNodeComponent,
-  template: TemplateNodeComponent,
-  "knowledge-retrieval": KnowledgeRetrievalNodeComponent,
-};
-
-let nodeIdCounter = 0;
-function nextId(type: NodeType) {
-  nodeIdCounter++;
-  return `${type}-${nodeIdCounter}`;
+interface WorkflowCanvasInnerProps {
+  appId: string;
+  workflowId: string | null;
+  initialGraph: Graph | null;
+  appDatasets: AppDatasetBindingDto[];
 }
 
-function syncNodeCounter(nodes: Array<{ id: string }>) {
-  const maxSeen = nodes.reduce((max, node) => {
-    const suffix = Number(node.id.match(/-(\d+)$/)?.[1] ?? 0);
-    return Number.isFinite(suffix) ? Math.max(max, suffix) : max;
-  }, nodeIdCounter);
-  nodeIdCounter = maxSeen;
-}
-
-function WorkflowCanvasInner() {
-  const store = useWorkflowStore();
-  const [rfNodes, setRfNodes, onNodesChangeRf] = useNodesState<Node>([]);
-  const [rfEdges, setRfEdges, onEdgesChangeRf] = useEdgesState<Edge>([]);
+function WorkflowCanvasInner({
+  appId,
+  workflowId,
+  initialGraph,
+  appDatasets,
+}: WorkflowCanvasInnerProps) {
+  const canvas = useCanvasState();
+  const { selectedNodeId, isConfigPanelOpen, closeConfigPanel } =
+    useCanvasStore();
+  const run = useRunStream();
+  const runState = useRunStore();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
-  const [output, setOutput] = useState("");
-  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     tone: "success" | "error" | "info";
     text: string;
   } | null>(null);
-  const streamControllerRef = useRef<AbortController | null>(null);
 
   const showToast = useCallback(
     (tone: "success" | "error" | "info", text: string) => {
@@ -82,50 +53,12 @@ function WorkflowCanvasInner() {
     []
   );
 
-  // Cleanup SSE stream on unmount
   useEffect(() => {
-    return () => {
-      streamControllerRef.current?.abort();
-    };
-  }, []);
-
-  useEffect(() => {
-    syncNodeCounter(store.nodes);
-    setRfNodes(
-      store.nodes.map((node) => ({
-        ...node,
-        data: node.data ?? {},
-      }))
-    );
-    setRfEdges(store.edges.map((edge) => ({ ...edge })));
-  }, [store.nodes, store.edges, setRfNodes, setRfEdges]);
-
-  const onConnect = useCallback(
-    (conn: Connection) => {
-      store.onConnect(conn);
-      setRfEdges((eds) => [
-        ...eds,
-        { ...conn, id: `edge-${Date.now()}` } as Edge,
-      ]);
-    },
-    [store, setRfEdges]
-  );
-
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChangeRf(changes);
-      store.onNodesChange(changes);
-    },
-    [store, onNodesChangeRf]
-  );
-
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      onEdgesChangeRf(changes);
-      store.onEdgesChange(changes);
-    },
-    [store, onEdgesChangeRf]
-  );
+    if (initialGraph) {
+      canvas.loadGraph(initialGraph);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialGraph]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -145,53 +78,25 @@ function WorkflowCanvasInner() {
         y: event.clientY,
       }) ?? { x: 0, y: 0 };
 
-      const newNode: Node = {
-        id: nextId(type),
-        type,
-        position,
-        data: {},
-      };
-
-      setRfNodes((nds) => [...nds, newNode]);
-      store.loadGraph(
-        store.nodes.concat({
-          id: newNode.id,
-          type,
-          title: type.charAt(0).toUpperCase() + type.slice(1),
-          position,
-          data: {},
-        }),
-        store.edges
-      );
+      canvas.addNode(type, position);
     },
-    [reactFlowInstance, setRfNodes, store]
+    [reactFlowInstance, canvas]
   );
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
-      store.selectNode(node.id);
+      canvas.selectNode(node.id);
     },
-    [store]
+    [canvas]
   );
 
   const onCanvasClick = useCallback(() => {
-    store.selectNode(null);
-  }, [store]);
+    canvas.selectNode(null);
+  }, [canvas]);
 
   const handleSave = async () => {
-    if (!store.appId) return;
     try {
-      const { data } = await saveWorkflow(store.appId, {
-        nodes: store.nodes.map((n) => ({
-          id: n.id,
-          type: n.type,
-          title: n.type,
-          position: n.position,
-          data: n.data ?? {},
-        })),
-        edges: store.edges,
-      });
-      store.setApp(store.appId, data.id);
+      await saveWorkflow(appId, canvas.getGraph());
       showToast("success", "Workflow saved");
     } catch {
       showToast("error", "Save failed");
@@ -199,94 +104,20 @@ function WorkflowCanvasInner() {
   };
 
   const handleRun = async () => {
-    if (!store.workflowId) return;
-    // Abort any existing stream
-    streamControllerRef.current?.abort();
-    store.setRunning(true);
-    store.clearEvents();
-    setOutput("");
-
-    try {
-      const { data: runData } = await startRun(store.workflowId, {
-        input: "Hello",
-      });
-      setCurrentRunId(runData.runId);
-
-      const controller = subscribeToRunStream(
-        runData.runId,
-        (event: GraphEngineEvent) => {
-          store.addEvent(event);
-          if (event.event === "node_start") {
-            store.setExecutingNode(event.nodeId);
-          } else if (event.event === "node_chunk") {
-            setOutput((prev) => prev + event.text);
-          } else if (event.event === "node_end") {
-            store.setExecutingNode(null);
-          } else if (event.event === "node_skipped") {
-            setOutput(
-              (prev) => prev + `[Skipped: ${event.nodeId}] ${event.reason}\n`
-            );
-          } else if (event.event === "graph_end") {
-            setOutput(JSON.stringify(event.outputs, null, 2));
-            store.setRunning(false);
-            setCurrentRunId(null);
-            showToast("success", "Run completed");
-          } else if (event.event === "error") {
-            const nodePrefix = event.nodeId ? `${event.nodeId}: ` : "";
-            setOutput(`Error: ${nodePrefix}${event.message}`);
-            store.setRunning(false);
-            store.setExecutingNode(null);
-            setCurrentRunId(null);
-            showToast("error", event.message);
-          }
-        },
-        () => {
-          store.setRunning(false);
-          store.setExecutingNode(null);
-          setCurrentRunId(null);
-        },
-        (err) => {
-          setOutput(`Error: ${err}`);
-          store.setRunning(false);
-          store.setExecutingNode(null);
-          setCurrentRunId(null);
-          showToast("error", err);
-        }
-      );
-      streamControllerRef.current = controller;
-    } catch (err: any) {
-      setOutput(`Error: ${err.message}`);
-      store.setRunning(false);
-      store.setExecutingNode(null);
-      setCurrentRunId(null);
-      showToast("error", err.message);
-    }
+    if (!workflowId) return;
+    await run.runWorkflow(workflowId, { input: "Hello" });
   };
 
-  const handleStop = async () => {
-    const runId = currentRunId;
-    streamControllerRef.current?.abort();
-    streamControllerRef.current = null;
-    store.setRunning(false);
-    store.setExecutingNode(null);
-    setCurrentRunId(null);
-
-    if (!runId) return;
-    try {
-      await cancelRun(runId);
-      setOutput((prev) => `${prev}${prev ? "\n" : ""}Run stopped.`);
-      showToast("info", "Run stopped");
-    } catch (err: any) {
-      showToast("error", err.message ?? "Failed to stop run");
-    }
+  const handleStop = () => {
+    run.stopRun(runState.currentRunId ?? undefined);
   };
 
   const onInit = useCallback((_instance: any) => {
     setReactFlowInstance(_instance);
   }, []);
 
-  const highlightedNodes = rfNodes.map((node) => {
-    if (node.id === store.executingNodeId) {
+  const highlightedNodes = canvas.nodes.map((node) => {
+    if (node.id === runState.executingNodeId) {
       return { ...node, className: "executing" };
     }
     return node;
@@ -295,35 +126,38 @@ function WorkflowCanvasInner() {
   return (
     <div className="flex h-full">
       <NodePalette />
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-1 flex-col">
         {/* Toolbar */}
-        <div className="h-12 bg-white border-b border-slate-200 flex items-center px-4 gap-3">
+        <div className="flex h-12 items-center gap-3 border-b border-white/8 bg-canvas px-4">
           <button
             onClick={handleSave}
-            className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+            className="rounded-lg px-4 py-1.5 text-sm font-medium text-white transition hover:brightness-110"
+            style={{
+              background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
+            }}
           >
             Save
           </button>
           <button
             onClick={handleRun}
-            disabled={store.isRunning}
-            className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
+            disabled={runState.isRunning}
+            className="rounded-lg bg-node-code px-4 py-1.5 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
-            {store.isRunning ? "Running..." : "Run"}
+            {runState.isRunning ? "Running..." : "Run"}
           </button>
-          {store.isRunning && (
+          {runState.isRunning && (
             <button
               onClick={handleStop}
-              className="px-4 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+              className="rounded-lg bg-node-end px-4 py-1.5 text-sm font-medium text-white transition hover:brightness-110"
             >
               Stop
             </button>
           )}
-          {store.executingNodeId && (
-            <span className="text-sm text-slate-500">
+          {runState.executingNodeId && (
+            <span className="text-sm text-white/50">
               Executing:{" "}
-              <span className="font-mono text-orange-600">
-                {store.executingNodeId}
+              <span className="font-mono text-node-llm">
+                {runState.executingNodeId}
               </span>
             </span>
           )}
@@ -332,17 +166,17 @@ function WorkflowCanvasInner() {
         {/* Canvas */}
         <div
           ref={reactFlowWrapper}
-          className="flex-1 relative"
+          className="relative flex-1"
           onDragOver={onDragOver}
           onDrop={onDrop}
         >
-          {rfNodes.length === 0 && (
-            <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-              <div className="rounded-lg border border-dashed border-slate-300 bg-white/85 px-5 py-4 text-center shadow-sm">
-                <div className="text-sm font-medium text-slate-700">
+          {canvas.nodes.length === 0 && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <div className="rounded-xl border border-dashed border-white/10 bg-canvas/85 px-5 py-4 text-center backdrop-blur">
+                <div className="text-sm font-medium text-white/70">
                   Drag nodes from the left panel
                 </div>
-                <div className="text-xs text-slate-500 mt-1">
+                <div className="mt-1 text-xs text-white/40">
                   Start with Start, add work nodes, then connect to End.
                 </div>
               </div>
@@ -350,10 +184,10 @@ function WorkflowCanvasInner() {
           )}
           <ReactFlow
             nodes={highlightedNodes}
-            edges={rfEdges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
+            edges={canvas.edges}
+            onNodesChange={canvas.onNodesChange}
+            onEdgesChange={canvas.onEdgesChange}
+            onConnect={canvas.onConnect}
             onNodeClick={onNodeClick}
             onPaneClick={onCanvasClick}
             onInit={onInit}
@@ -362,30 +196,44 @@ function WorkflowCanvasInner() {
             snapGrid={[16, 16]}
             fitView
           >
-            <Background />
-            <Controls />
-            <MiniMap />
+            <Background color="rgba(255,255,255,0.04)" gap={16} />
+            <Controls className="[&>button]:!bg-canvas [&>button]:!border-white/10 [&>button]:!text-white/60" />
+            <MiniMap
+              maskColor="rgba(0,0,0,0.5)"
+              className="!border-white/8 !bg-canvas"
+            />
           </ReactFlow>
         </div>
 
         {/* Output panel */}
         <WorkflowRunResultsPanel
-          nodes={store.nodes}
-          events={store.events}
-          output={output}
+          nodes={canvas.nodes}
+          events={runState.events}
+          output={
+            runState.outputs ? JSON.stringify(runState.outputs, null, 2) : ""
+          }
         />
       </div>
-      <NodeConfigPanel />
+      {isConfigPanelOpen && selectedNodeId && (
+        <NodeConfigPanel
+          nodeId={selectedNodeId}
+          nodes={canvas.nodes}
+          appDatasets={appDatasets}
+          onUpdateNodeData={canvas.updateNodeData}
+          onClose={closeConfigPanel}
+        />
+      )}
       {toast && (
-        <div
-          className={`fixed right-4 top-4 z-50 rounded-lg px-4 py-2 text-sm shadow-lg ${
-            toast.tone === "error"
-              ? "bg-red-600 text-white"
-              : toast.tone === "success"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-800 text-white"
-          }`}
-        >
+        <div className="fixed right-4 top-14 z-50 flex items-center gap-2 rounded-lg border border-white/10 bg-[#1a1a2e] px-4 py-3 text-sm text-white shadow-xl backdrop-blur-2xl">
+          <span
+            className={`h-2 w-2 rounded-full ${
+              toast.tone === "error"
+                ? "bg-red-400"
+                : toast.tone === "success"
+                  ? "bg-green-400"
+                  : "bg-blue-400"
+            }`}
+          />
           {toast.text}
         </div>
       )}
@@ -393,10 +241,20 @@ function WorkflowCanvasInner() {
   );
 }
 
-export function WorkflowCanvas() {
+export function WorkflowCanvas({
+  appId,
+  workflowId,
+  initialGraph,
+  appDatasets,
+}: WorkflowCanvasInnerProps) {
   return (
     <ReactFlowProvider>
-      <WorkflowCanvasInner />
+      <WorkflowCanvasInner
+        appId={appId}
+        workflowId={workflowId}
+        initialGraph={initialGraph}
+        appDatasets={appDatasets}
+      />
     </ReactFlowProvider>
   );
 }

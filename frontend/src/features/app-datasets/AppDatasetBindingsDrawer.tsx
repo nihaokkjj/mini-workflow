@@ -1,17 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  bindAppDataset,
-  listAppDatasets,
-  listDatasets,
-  unbindAppDataset,
-} from "../../services/api";
-import type { AppDatasetBindingDto, DatasetDto } from "../../types";
+import { useMemo, useState } from "react";
+import { useDatasets } from "../../queries/datasets/useDatasets";
+import { useBindAppDataset } from "../../queries/datasets/useBindAppDataset";
+import { useUnbindAppDataset } from "../../queries/datasets/useUnbindAppDataset";
+import type { AppDatasetBindingDto } from "../../types";
 
 interface AppDatasetBindingsDrawerProps {
   appId: string;
   appName: string;
   bindings: AppDatasetBindingDto[];
-  onBindingsChange: (bindings: AppDatasetBindingDto[]) => void;
   onClose: () => void;
 }
 
@@ -19,48 +15,18 @@ export function AppDatasetBindingsDrawer({
   appId,
   appName,
   bindings,
-  onBindingsChange,
   onClose,
 }: AppDatasetBindingsDrawerProps) {
-  const [datasets, setDatasets] = useState<DatasetDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: datasets = [], isLoading: loading } = useDatasets();
+  const bindMutation = useBindAppDataset(appId);
+  const unbindMutation = useUnbindAppDataset(appId);
   const [busyDatasetId, setBusyDatasetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    listDatasets()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setDatasets(data);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Failed to load datasets");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const bindingByDatasetId = useMemo(
     () => new Map(bindings.map((binding) => [binding.datasetId, binding])),
     [bindings]
   );
-
-  const refreshBindings = async () => {
-    const { data } = await listAppDatasets(appId);
-    onBindingsChange(data);
-  };
 
   const handleToggleBinding = async (datasetId: string) => {
     setBusyDatasetId(datasetId);
@@ -68,12 +34,10 @@ export function AppDatasetBindingsDrawer({
 
     try {
       if (bindingByDatasetId.has(datasetId)) {
-        await unbindAppDataset(appId, datasetId);
+        await unbindMutation.mutateAsync(datasetId);
       } else {
-        await bindAppDataset(appId, datasetId);
+        await bindMutation.mutateAsync(datasetId);
       }
-
-      await refreshBindings();
     } catch {
       setError("Failed to update app datasets");
     } finally {
@@ -87,38 +51,38 @@ export function AppDatasetBindingsDrawer({
         type="button"
         aria-label="Close dataset bindings"
         onClick={onClose}
-        className="fixed inset-0 z-40 bg-slate-950/25"
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
       />
-      <aside className="fixed right-0 top-0 z-50 h-full w-full max-w-md border-l border-slate-200 bg-white shadow-2xl">
+      <aside className="fixed right-0 top-0 z-50 h-full w-full max-w-md border-l border-white/8 bg-canvas">
         <div className="flex h-full flex-col">
-          <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+          <div className="flex items-start justify-between border-b border-white/8 px-5 py-4">
             <div>
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+              <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
                 App Datasets
               </div>
-              <h2 className="mt-1 text-lg font-semibold text-slate-900">
+              <h2 className="mt-1 text-lg font-semibold text-white">
                 {appName}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Bind datasets here, then pick them directly in the knowledge
-                retrieval node.
+              <p className="mt-1 text-sm text-white/40">
+                Bind datasets here, then pick them in the knowledge retrieval
+                node.
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              className="rounded-md p-2 text-white/30 transition hover:bg-white/5 hover:text-white/70"
             >
               ✕
             </button>
           </div>
 
-          <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
-            <div className="text-sm font-medium text-slate-700">
+          <div className="border-b border-white/8 bg-black/20 px-5 py-4">
+            <div className="text-sm font-medium text-white/70">
               Currently bound
             </div>
             {bindings.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-white/40">
                 No dataset is bound to this app yet.
               </p>
             ) : (
@@ -126,7 +90,7 @@ export function AppDatasetBindingsDrawer({
                 {bindings.map((binding) => (
                   <span
                     key={binding.id}
-                    className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700"
+                    className="rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent"
                   >
                     {binding.dataset.name}
                   </span>
@@ -137,18 +101,18 @@ export function AppDatasetBindingsDrawer({
 
           <div className="flex-1 overflow-y-auto px-5 py-4">
             {error && (
-              <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
                 {error}
               </div>
             )}
 
             {loading ? (
-              <div className="flex items-center gap-3 text-sm text-slate-500">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+              <div className="flex items-center gap-3 text-sm text-white/40">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
                 Loading datasets...
               </div>
             ) : datasets.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+              <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-5 text-sm text-white/40">
                 No dataset has been created yet. Create one through the RAG API
                 first, then bind it to this app here.
               </div>
@@ -163,31 +127,31 @@ export function AppDatasetBindingsDrawer({
                       key={dataset.id}
                       className={`rounded-xl border px-4 py-4 transition ${
                         isBound
-                          ? "border-blue-200 bg-blue-50/60"
-                          : "border-slate-200 bg-white"
+                          ? "border-accent/30 bg-accent/[0.04]"
+                          : "border-white/8 bg-black/20"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <h3 className="truncate text-sm font-semibold text-slate-800">
+                            <h3 className="truncate text-sm font-semibold text-white/80">
                               {dataset.name}
                             </h3>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-white/40">
                               {dataset.retrievalMode}
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-white/40">
                             {dataset.description?.trim() || "No description"}
                           </p>
-                          <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500">
-                            <span className="rounded-full bg-slate-100 px-2 py-1">
+                          <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/40">
+                            <span className="rounded-full bg-white/5 px-2 py-1">
                               Status: {dataset.status}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-1">
+                            <span className="rounded-full bg-white/5 px-2 py-1">
                               Top K: {dataset.topK}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-1">
+                            <span className="rounded-full bg-white/5 px-2 py-1">
                               Threshold: {dataset.scoreThreshold}
                             </span>
                           </div>
@@ -198,14 +162,14 @@ export function AppDatasetBindingsDrawer({
                           onClick={() => handleToggleBinding(dataset.id)}
                           className={`shrink-0 rounded-md px-3 py-2 text-sm font-medium transition disabled:opacity-50 ${
                             isBound
-                              ? "bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
+                              ? "bg-white/5 text-white/60 ring-1 ring-white/15 hover:bg-white/10 hover:text-white"
+                              : "bg-accent text-white hover:brightness-110"
                           }`}
                         >
                           {isBusy ? "Saving..." : isBound ? "Unbind" : "Bind"}
                         </button>
                       </div>
-                      <div className="mt-3 truncate font-mono text-[11px] text-slate-400">
+                      <div className="mt-3 truncate font-mono text-[11px] text-white/20">
                         {dataset.id}
                       </div>
                     </div>

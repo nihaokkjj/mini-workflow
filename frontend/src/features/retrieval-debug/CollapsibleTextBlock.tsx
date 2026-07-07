@@ -18,20 +18,20 @@ export function CollapsibleTextBlock({
   }, [text, collapseState.isCollapsedByDefault]);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-        <div className="text-sm font-medium text-slate-700">Context</div>
+    <div className="rounded-xl border border-white/8 bg-black/20">
+      <div className="flex items-center justify-between border-b border-white/8 px-3 py-2">
+        <div className="text-sm font-medium text-white/70">Context</div>
         {collapseState.isCollapsedByDefault && (
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+            className="text-xs font-medium text-accent transition hover:text-accent-2"
           >
             {expanded ? "Collapse" : "Expand"}
           </button>
         )}
       </div>
-      <pre className="max-h-64 overflow-auto whitespace-pre-wrap px-3 py-3 text-xs text-slate-700">
+      <pre className="max-h-64 overflow-auto whitespace-pre-wrap px-3 py-3 text-xs text-white/60">
         {expanded ? text : collapseState.preview}
       </pre>
     </div>

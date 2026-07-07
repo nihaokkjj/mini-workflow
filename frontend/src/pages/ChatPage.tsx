@@ -1,188 +1,187 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  getApp,
-  getWorkflowByApp,
-  listConversations,
-  createConversation,
-  getMessages,
-  deleteConversation,
-  startChatRun,
-} from "../services/api";
-import type { AppDto, ConversationDto, MessageDto, GraphEngineEvent } from "../types";
+import { useQueryClient } from "@tanstack/react-query";
+import { useApp } from "../queries/apps/useApp";
+import { useWorkflow } from "../queries/workflows/useWorkflow";
+import { useConversations } from "../queries/conversations/useConversations";
+import { useCreateConversation } from "../queries/conversations/useCreateConversation";
+import { useMessages } from "../queries/conversations/useMessages";
+import { useDeleteConversation } from "../queries/conversations/useDeleteConversation";
+import { conversationKeys } from "../queries/conversations/keys";
+import { useChatStream } from "../features/chat/useChatStream";
+import { useRunStore } from "../stores/run.store";
+import type { MessageDto } from "../types";
 
 export default function ChatPage() {
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
-  const skipNextMessageLoadRef = useRef<string | null>(null);
-  const [app, setApp] = useState<AppDto | null>(null);
-  const [workflowId, setWorkflowId] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<ConversationDto[]>([]);
+  const queryClient = useQueryClient();
+  const { data: app, error: appError } = useApp(appId);
+  const { data: workflow } = useWorkflow(appId);
+  const workflowId = workflow?.id ?? null;
+  const { data: conversations = [] } = useConversations(appId);
+  const createConversation = useCreateConversation();
+  const deleteConversation = useDeleteConversation(appId!);
+  const chat = useChatStream();
+  const runState = useRunStore();
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<MessageDto[]>([]);
+  const chatRequestedForNewConversation = useRef(false);
+  const { data: messages = [] } = useMessages(
+    selectedId && !chatRequestedForNewConversation ? selectedId : undefined
+  );
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
+  const [optimisticUserMessages, setOptimisticUserMessages] = useState<
+    MessageDto[]
+  >([]);
   const [toast, setToast] = useState<string | null>(null);
-  const controllerRef = useRef<AbortController | null>(null);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const skipNextMessageLoadRef = useRef<string | null>(null);
 
   const showToast = (text: string) => {
     setToast(text);
-    window.setTimeout(() => setToast(null), 2600);
+    window.setTimeout(() => setToast(null), 3000);
   };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streaming]);
+  }, [messages, streaming, optimisticUserMessages]);
 
   useEffect(() => {
-    if (!appId) return;
-    getApp(appId).then(({ data }) => setApp(data)).catch(() => navigate("/"));
-    getWorkflowByApp(appId)
-      .then(({ data }) => setWorkflowId(data?.id ?? null))
-      .catch(() => setWorkflowId(null));
-    loadConversations();
-  }, [appId, navigate]);
+    if (appError) navigate("/");
+  }, [appError, navigate]);
 
   useEffect(() => {
-    if (!selectedId) {
-      setMessages([]);
-      return;
-    }
-    if (skipNextMessageLoadRef.current === selectedId) {
-      skipNextMessageLoadRef.current = null;
-      return;
-    }
-    loadMessages(selectedId);
+    setOptimisticUserMessages([]);
   }, [selectedId]);
 
-  const loadConversations = async () => {
-    if (!appId) return;
-    try {
-      const { data } = await listConversations(appId);
-      setConversations(data);
-    } catch {
-      showToast("Failed to load conversations");
-    }
-  };
-
-  const loadMessages = async (conversationId: string) => {
-    try {
-      const { data } = await getMessages(conversationId);
-      setMessages(data);
-    } catch {
-      showToast("Failed to load messages");
-    }
-  };
-
   const handleSend = async () => {
-    if (!input.trim() || !workflowId || isRunning) return;
+    if (!input.trim() || !workflowId || runState.isRunning) return;
 
     const query = input.trim();
-    let conversationId = selectedId;
-    if (!conversationId) {
+    setInput("");
+    let convId = selectedId;
+    let runFailed = false;
+
+    if (!convId) {
       try {
-        const { data } = await createConversation(appId!);
-        conversationId = data.id;
-        // Keep the optimistic user message visible while the brand-new
-        // conversation is still empty on the server.
-        skipNextMessageLoadRef.current = conversationId;
-        setSelectedId(conversationId);
-        setConversations((prev) => [data, ...prev]);
+        chatRequestedForNewConversation.current = true;
+        const { data } = await createConversation.mutateAsync(appId!);
+        convId = data.id;
+        skipNextMessageLoadRef.current = convId;
+        setSelectedId(convId);
       } catch {
+        chatRequestedForNewConversation.current = false;
         showToast("Failed to create conversation");
         return;
       }
     }
 
-    const optimisticMessage: MessageDto = {
+    const optimistic: MessageDto = {
       id: `temp-user-${Date.now()}`,
-      conversationId,
+      conversationId: convId,
       role: "user",
       content: query,
       createdAt: new Date().toISOString(),
     };
-
-    setMessages((prev) => [...prev, optimisticMessage]);
-    setInput("");
+    setOptimisticUserMessages((prev) => [...prev, optimistic]);
     setStreaming("");
-    setIsRunning(true);
-    controllerRef.current?.abort();
 
-    let runFailed = false;
-
-    controllerRef.current = startChatRun(
-      conversationId,
+    await chat.run(
+      convId,
       workflowId,
       { query },
-      (event: GraphEngineEvent) => {
-        if (event.event === "node_chunk") {
-          setStreaming((prev) => prev + event.text);
-        } else if (event.event === "graph_end") {
-          setStreaming((prev) => {
-            const outputs = event.outputs as Record<string, unknown>;
-            const text = String(outputs.answer ?? outputs.result ?? JSON.stringify(outputs));
-            return prev || text;
-          });
-        } else if (event.event === "error") {
+      {
+        onChunk: (text) => setStreaming((prev) => prev + text),
+        onError: (message) => {
           runFailed = true;
-          setStreaming((prev) => prev + `\n[Error: ${event.message}]`);
-          showToast(event.message);
-        }
-      },
-      () => {
-        setIsRunning(false);
-        if (!runFailed) {
-          setStreaming("");
-        }
-        loadMessages(conversationId!);
-        loadConversations();
-      },
-      (err) => {
-        runFailed = true;
-        setStreaming((prev) => prev + `\n[Error: ${err}]`);
-        showToast(err);
-        setIsRunning(false);
-      },
+          showToast(message);
+        },
+        onDone: () => {
+          if (!runFailed) {
+            setStreaming("");
+          }
+          setOptimisticUserMessages([]);
+          queryClient.invalidateQueries({
+            queryKey: conversationKeys.messages(convId),
+          });
+          queryClient.invalidateQueries({
+            queryKey: conversationKeys.byApp(appId!),
+          });
+        },
+      }
     );
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this conversation?")) return;
     try {
-      await deleteConversation(id);
+      await deleteConversation.mutateAsync(id);
       if (selectedId === id) setSelectedId(null);
-      loadConversations();
     } catch {
       showToast("Failed to delete conversation");
     }
   };
 
+  const displayMessages: MessageDto[] = [
+    ...messages,
+    ...optimisticUserMessages.filter(
+      (om) => !messages.some((m) => m.id === om.id)
+    ),
+  ];
+
   return (
-    <div className="h-full flex">
-      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col">
-        <div className="h-12 border-b border-slate-200 flex items-center px-4 justify-between">
-          <button onClick={() => navigate("/")} className="text-slate-500 hover:text-slate-800 text-sm">← Back</button>
-          <span className="font-semibold text-sm text-slate-700 truncate">{app?.name}</span>
+    <div className="flex h-full">
+      {/* Sidebar */}
+      <aside className="flex w-72 flex-col border-r border-white/8 bg-canvas">
+        <div className="flex h-12 items-center justify-between border-b border-white/8 px-4">
+          <button
+            onClick={() => navigate("/")}
+            className="text-sm text-white/50 transition hover:text-white"
+          >
+            ← Back
+          </button>
+          <span className="truncate text-sm font-semibold text-white/70">
+            {app?.name}
+          </span>
         </div>
         <button
-          onClick={() => setSelectedId(null)}
-          className="m-3 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+          onClick={() => {
+            chatRequestedForNewConversation.current = false;
+            setSelectedId(null);
+          }}
+          className="m-3 rounded-lg px-3 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          style={{
+            background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
+          }}
         >
           New Chat
         </button>
-        <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2">
+        <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
           {conversations.map((c) => (
             <div
               key={c.id}
-              onClick={() => setSelectedId(c.id)}
-              className={`p-3 rounded-lg cursor-pointer text-sm flex justify-between items-center ${selectedId === c.id ? "bg-blue-50 border border-blue-200" : "hover:bg-slate-50 border border-transparent"}`}
+              onClick={() => {
+                chatRequestedForNewConversation.current = false;
+                setSelectedId(c.id);
+              }}
+              className={`flex cursor-pointer items-center justify-between rounded-lg p-3 text-sm transition ${
+                selectedId === c.id
+                  ? "border border-accent/30 bg-accent/[0.08]"
+                  : "border border-transparent hover:bg-white/5"
+              }`}
             >
-              <span className="truncate">Conversation {c.id.slice(0, 8)}</span>
+              <span className="truncate text-white/70">
+                Conversation {c.id.slice(0, 8)}
+              </span>
               <button
-                onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }}
-                className="text-slate-400 hover:text-red-500 ml-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(c.id);
+                }}
+                className="ml-2 text-white/20 transition hover:text-red-400"
               >
                 🗑
               </button>
@@ -191,45 +190,69 @@ export default function ChatPage() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col bg-slate-50">
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.map((m) => (
-            <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] px-4 py-2 rounded-lg text-sm whitespace-pre-wrap ${m.role === "user" ? "bg-blue-600 text-white" : "bg-white border border-slate-200 text-slate-800"}`}>
+      {/* Chat area */}
+      <div className="flex flex-1 flex-col bg-[#0d0d14]">
+        <div className="flex-1 space-y-4 overflow-y-auto p-6">
+          {displayMessages.map((m) => (
+            <div
+              key={m.id}
+              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[70%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${
+                  m.role === "user"
+                    ? "bg-accent text-white"
+                    : "border border-white/8 bg-black/30 text-white/80"
+                }`}
+              >
                 {m.content}
               </div>
             </div>
           ))}
           {streaming && (
             <div className="flex justify-start">
-              <div className="max-w-[70%] px-4 py-2 rounded-lg text-sm whitespace-pre-wrap bg-white border border-slate-200 text-slate-800">{streaming}</div>
+              <div className="max-w-[70%] rounded-lg border border-white/8 bg-black/30 px-4 py-2 text-sm whitespace-pre-wrap text-white/80">
+                {streaming}
+              </div>
             </div>
           )}
           <div ref={bottomRef} />
         </div>
 
-        <div className="p-4 bg-white border-t border-slate-200">
+        {/* Input bar */}
+        <div className="border-t border-white/8 bg-canvas p-4">
           <div className="flex gap-2">
             <input
-              className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
-              placeholder={workflowId ? "Type a message..." : "No workflow found for this app"}
+              className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/25 transition focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
+              placeholder={
+                workflowId
+                  ? "Type a message..."
+                  : "No workflow found for this app"
+              }
               value={input}
-              disabled={!workflowId || isRunning}
+              disabled={!workflowId || runState.isRunning}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+              onKeyDown={(e) =>
+                e.key === "Enter" && !e.shiftKey && handleSend()
+              }
             />
             <button
               onClick={handleSend}
-              disabled={!workflowId || isRunning || !input.trim()}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
+              disabled={!workflowId || runState.isRunning || !input.trim()}
+              className="rounded-xl px-5 py-3 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-50"
+              style={{
+                background: "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
+              }}
             >
-              {isRunning ? "..." : "Send"}
+              {runState.isRunning ? "..." : "Send"}
             </button>
           </div>
         </div>
       </div>
+
       {toast && (
-        <div className="fixed right-4 top-4 z-50 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg border border-red-500/20 bg-[#1a1a2e] px-4 py-3 text-sm text-white shadow-xl backdrop-blur-2xl">
+          <span className="h-2 w-2 rounded-full bg-red-400" />
           {toast}
         </div>
       )}

@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { Run } from "../../database/entities/run.entity";
 import { Workflow } from "../../database/entities/workflow.entity";
 import { GraphEngine } from "../../core/engine/graph-engine";
@@ -15,7 +15,7 @@ interface ActiveRun {
 }
 
 @Injectable()
-export class RunService {
+export class RunService implements OnModuleInit {
   private readonly activeRuns = new Map<string, ActiveRun>();
   private readonly runTimeoutMs = 60000;
 
@@ -24,57 +24,105 @@ export class RunService {
     private readonly runRepo: Repository<Run>,
     @InjectRepository(Workflow)
     private readonly workflowRepo: Repository<Workflow>,
-    private readonly ragRetrieval: RagRetrievalOrchestrator,
+    private readonly ragRetrieval: RagRetrievalOrchestrator
   ) {}
 
-  async createRun(workflowId: string, inputs: Record<string, unknown>): Promise<Run> {
+  async onModuleInit(): Promise<void> {
+    // Recover stale runs left in "running" state after a server restart.
+    // Since the in-memory AbortController is gone, these runs can never
+    // complete or be canceled — mark them as failed so they don't block
+    // the user's workflow history.
+    const result = await this.runRepo.update(
+      { status: "running" } as any,
+      {
+        status: "failed",
+        errorMessage: "Server restarted while run was in progress",
+        finishedAt: new Date(),
+      } as any
+    );
+    if ((result.affected ?? 0) > 0) {
+      // Use console directly — NestJS logger isn't ready during OnModuleInit
+      console.log(
+        `[RunService] Marked ${result.affected} stale running run(s) as failed after restart`
+      );
+    }
+  }
+
+  async createRun(
+    workflowId: string,
+    inputs: Record<string, unknown>
+  ): Promise<Run> {
     const run = this.runRepo.create({ workflowId, inputs, status: "pending" });
     return this.runRepo.save(run);
+  }
+
+  private updateRun(
+    id: string,
+    where: { status: string[] },
+    data: Record<string, unknown>
+  ) {
+    // Thin helper to avoid fighting TypeORM's _QueryDeepPartialEntity which
+    // recurses into relation properties that we never set via update().
+    return this.runRepo.update(
+      { id, status: In(where.status) } as any,
+      data as any
+    );
   }
 
   async completeRun(
     runId: string,
     outputs: Record<string, unknown>,
     status: RunTerminalStatus,
-    error?: string,
+    error?: string
   ): Promise<void> {
-    const run = await this.runRepo.findOneBy({ id: runId });
-    if (!run) return;
-    if (run.status === "canceled" || run.status === "timeout") return;
-    run.status = status;
-    run.outputs = outputs;
-    if (error) run.errorMessage = error;
-    run.finishedAt = new Date();
-    await this.runRepo.save(run);
+    // Atomic update: only transition if the run is still in a mutable state.
+    // This prevents a late completeRun from overwriting a concurrent cancelRun.
+    const data: Record<string, unknown> = {
+      status,
+      outputs,
+      finishedAt: new Date(),
+    };
+    if (error) data.errorMessage = error;
+    await this.updateRun(runId, { status: ["pending", "running"] }, data);
   }
 
   async cancelRun(runId: string): Promise<boolean> {
     const activeRun = this.activeRuns.get(runId);
-    const run = await this.runRepo.findOneBy({ id: runId });
-    if (!run) return false;
-
     if (activeRun) {
       activeRun.controller.abort(new Error("Run was canceled"));
     }
 
-    if (run.status === "pending" || run.status === "running") {
-      run.status = "canceled";
-      run.errorMessage = "Run was canceled";
-      run.finishedAt = new Date();
-      await this.runRepo.save(run);
-    }
+    // Atomic update: only cancel if the run is still in a mutable state.
+    const result = await this.updateRun(
+      runId,
+      { status: ["pending", "running"] },
+      {
+        status: "canceled",
+        errorMessage: "Run was canceled",
+        finishedAt: new Date(),
+      }
+    );
 
-    return true;
+    return (result.affected ?? 0) > 0;
   }
 
-  private makeErrorEvent(message: string, nodeId: string | null = null): GraphEngineEvent {
-    return { event: "error", nodeId, nodeType: null, message, timestamp: Date.now() };
+  private makeErrorEvent(
+    message: string,
+    nodeId: string | null = null
+  ): GraphEngineEvent {
+    return {
+      event: "error",
+      nodeId,
+      nodeType: null,
+      message,
+      timestamp: Date.now(),
+    };
   }
 
   async *executeRun(
     workflowId: string,
     inputs: Record<string, unknown>,
-    runId: string,
+    runId: string
   ): AsyncGenerator<GraphEngineEvent> {
     const workflow = await this.workflowRepo.findOneBy({ id: workflowId });
     if (!workflow) {
@@ -83,8 +131,8 @@ export class RunService {
       return;
     }
 
-    // Mark running
-    await this.runRepo.update(runId, { status: "running" });
+    // Mark running — only if still pending (guards against concurrent starts)
+    await this.updateRun(runId, { status: ["pending"] }, { status: "running" });
 
     // Build context and engine
     const controller = new AbortController();
@@ -129,7 +177,11 @@ export class RunService {
           finalOutputs = event.outputs as Record<string, unknown>;
         }
         if (event.event === "error") {
-          finalStatus = activeRun.timedOut ? "timeout" : controller.signal.aborted ? "canceled" : "failed";
+          finalStatus = activeRun.timedOut
+            ? "timeout"
+            : controller.signal.aborted
+              ? "canceled"
+              : "failed";
           errorMsg = event.message;
         }
       }
@@ -137,12 +189,21 @@ export class RunService {
       // Engine validation and node execution can still throw directly. Convert
       // those failures into the same terminal event/status path as SSE errors.
       errorMsg = err instanceof Error ? err.message : "Unknown execution error";
-      finalStatus = activeRun.timedOut ? "timeout" : controller.signal.aborted ? "canceled" : "failed";
+      finalStatus = activeRun.timedOut
+        ? "timeout"
+        : controller.signal.aborted
+          ? "canceled"
+          : "failed";
       yield this.makeErrorEvent(errorMsg);
     } finally {
       clearTimeout(timeout);
       this.activeRuns.delete(runId);
-      await this.completeRun(runId, finalOutputs, finalStatus, errorMsg || undefined);
+      await this.completeRun(
+        runId,
+        finalOutputs,
+        finalStatus,
+        errorMsg || undefined
+      );
     }
   }
 }

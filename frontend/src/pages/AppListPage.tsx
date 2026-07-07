@@ -11,11 +11,14 @@ export default function AppListPage() {
   const deleteApp = useDeleteApp();
   const [name, setName] = useState("");
   const [toDelete, setToDelete] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    text: string;
+    tone: "error" | "success";
+  } | null>(null);
 
-  const showToast = (text: string) => {
-    setToast(text);
-    window.setTimeout(() => setToast(null), 2600);
+  const showToast = (text: string, tone: "error" | "success" = "error") => {
+    setToast({ text, tone });
+    window.setTimeout(() => setToast(null), 3000);
   };
 
   useEffect(() => {
@@ -25,7 +28,10 @@ export default function AppListPage() {
   const handleCreate = async () => {
     if (!name.trim()) return;
     try {
-      const { data } = await createApp.mutateAsync({ name, mode: "workflow" });
+      const { data } = await createApp.mutateAsync({
+        name,
+        mode: "workflow",
+      });
       navigate(`/app/${data.id}`);
     } catch {
       showToast("Failed to create app");
@@ -37,31 +43,38 @@ export default function AppListPage() {
     try {
       await deleteApp.mutateAsync(toDelete);
       setToDelete(null);
+      showToast("App deleted", "success");
     } catch {
       showToast("Failed to delete app");
     }
   };
 
+  const apps = appsResp?.data ?? [];
+
   return (
-    <div className="max-w-5xl mx-auto p-8">
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="mx-auto flex min-h-full max-w-5xl flex-col px-6 py-8 sm:px-10">
+      {/* Header */}
+      <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Mini Dify</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            创建 App，进入工作流编辑器，或先查看项目内置操作说明。
+          <h1 className="font-display text-2xl font-bold tracking-tight text-white">
+            Agent<span className="text-accent">Forge</span>
+          </h1>
+          <p className="mt-2 text-sm text-white/50">
+            Create an app, then build its workflow on the canvas.
           </p>
         </div>
         <button
           onClick={() => navigate("/guide")}
-          className="shrink-0 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-400 hover:text-slate-900"
+          className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/70 backdrop-blur transition hover:border-white/20 hover:text-white"
         >
-          使用说明
+          Guide
         </button>
-      </div>
+      </header>
 
-      <div className="flex gap-2 mb-8">
+      {/* Create bar */}
+      <div className="mt-8 flex gap-3">
         <input
-          className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/25 transition focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
           placeholder="App name..."
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -69,70 +82,87 @@ export default function AppListPage() {
         />
         <button
           onClick={handleCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+          disabled={createApp.isPending}
+          className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition"
+          style={{
+            background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
+          }}
         >
-          Create App
+          {createApp.isPending ? "Creating..." : "Create App"}
         </button>
       </div>
 
+      {/* Section label */}
+      <div className="mt-10 mb-4">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.8px] text-white/40">
+          Your Apps
+        </h2>
+      </div>
+
+      {/* Loading */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse"
+              className="animate-pulse rounded-2xl border border-white/8 bg-white/[0.03] p-5 backdrop-blur-2xl"
             >
-              <div className="h-4 w-2/3 bg-slate-200 rounded mb-3" />
-              <div className="h-3 w-1/3 bg-slate-100 rounded mb-8" />
+              <div className="mb-3 h-4 w-2/3 rounded bg-white/10" />
+              <div className="mb-8 h-3 w-1/3 rounded bg-white/5" />
               <div className="flex gap-2">
-                <div className="h-8 flex-1 bg-slate-100 rounded-lg" />
-                <div className="h-8 flex-1 bg-slate-100 rounded-lg" />
+                <div className="h-8 flex-1 rounded-lg bg-white/5" />
+                <div className="h-8 flex-1 rounded-lg bg-white/5" />
               </div>
             </div>
           ))}
         </div>
       )}
 
+      {/* App cards */}
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(appsResp?.data ?? []).map((app) => (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {apps.map((app) => (
             <div
               key={app.id}
-              className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col"
+              className="flex flex-col rounded-2xl border border-white/8 bg-white/[0.03] p-5 backdrop-blur-2xl transition hover:border-white/15"
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between">
                 <div>
-                  <div className="font-semibold text-slate-800">{app.name}</div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    <span className="inline-block px-2 py-0.5 bg-slate-100 rounded-full">
+                  <div className="font-semibold text-white">{app.name}</div>
+                  <div className="mt-1 text-xs text-white/40">
+                    <span className="inline-block rounded-full bg-white/8 px-2 py-0.5 text-[11px]">
                       {app.mode}
                     </span>
-                    {" · "}
+                    <span className="mx-1.5 text-white/20">&middot;</span>
                     {new Date(app.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>
               {app.description && (
-                <div className="text-sm text-slate-500 mb-4 line-clamp-2">
+                <p className="mt-3 line-clamp-2 text-sm text-white/50">
                   {app.description}
-                </div>
+                </p>
               )}
-              <div className="mt-auto flex gap-2">
+              <div className="mt-auto flex gap-2 pt-4">
                 <button
                   onClick={() => navigate(`/app/${app.id}`)}
-                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-sm hover:bg-slate-50"
+                  className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-white/70 transition hover:border-white/20 hover:text-white"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => navigate(`/app/${app.id}/chat`)}
-                  className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                  className="flex-1 rounded-lg px-3 py-2 text-sm font-medium text-white transition"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
+                  }}
                 >
                   Chat
                 </button>
                 <button
                   onClick={() => setToDelete(app.id)}
-                  className="px-3 py-1.5 text-red-500 border border-red-200 rounded-lg text-sm hover:bg-red-50"
+                  className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm font-medium text-red-400 transition hover:border-red-500/40 hover:bg-red-500/10"
                 >
                   Delete
                 </button>
@@ -142,29 +172,35 @@ export default function AppListPage() {
         </div>
       )}
 
-      {!isLoading && (appsResp?.data ?? []).length === 0 && (
-        <div className="text-center text-slate-400 py-12">
-          No apps yet. Create one above.
+      {/* Empty */}
+      {!isLoading && apps.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-20">
+          <p className="text-sm text-white/30">
+            No apps yet. Create one above to get started.
+          </p>
         </div>
       )}
 
+      {/* Delete confirm dialog */}
       {toDelete && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-80 shadow-xl">
-            <div className="font-semibold mb-2">Delete app?</div>
-            <p className="text-sm text-slate-500 mb-4">
-              This cannot be undone.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-80 rounded-2xl border border-white/10 bg-[#1a1a2e] p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-white">
+              Delete this app?
+            </h3>
+            <p className="mt-1 text-sm text-white/50">
+              This action cannot be undone.
             </p>
-            <div className="flex gap-2 justify-end">
+            <div className="mt-5 flex justify-end gap-3">
               <button
                 onClick={() => setToDelete(null)}
-                className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
+                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/70 transition hover:border-white/20 hover:text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
               >
                 Delete
               </button>
@@ -173,9 +209,18 @@ export default function AppListPage() {
         </div>
       )}
 
+      {/* Toast */}
       {toast && (
-        <div className="fixed right-4 top-4 z-50 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
-          {toast}
+        <div
+          className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg border border-white/10 bg-[#1a1a2e] px-4 py-3 text-sm text-white shadow-xl backdrop-blur-2xl"
+          role="status"
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${
+              toast.tone === "error" ? "bg-red-400" : "bg-green-400"
+            }`}
+          />
+          {toast.text}
         </div>
       )}
     </div>

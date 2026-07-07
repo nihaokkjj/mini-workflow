@@ -69,14 +69,14 @@ export function useCanvasState() {
   );
 
   const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
+    (changes: NodeChange<NodeConfig>[]) => {
       onNodesChangeRf(changes);
     },
     [onNodesChangeRf]
   );
 
   const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
+    (changes: EdgeChange<EdgeConfig>[]) => {
       onEdgesChangeRf(changes);
     },
     [onEdgesChangeRf]
