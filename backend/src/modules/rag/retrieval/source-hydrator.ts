@@ -5,7 +5,19 @@ import { Dataset } from "../../../database/entities/dataset.entity";
 import { DatasetDocument } from "../../../database/entities/dataset-document.entity";
 import { DocumentSegment } from "../../../database/entities/document-segment.entity";
 import { SearchHit } from "../adapters/search-index.adapter";
-import { Source } from "./context-assembler";
+
+export interface Source {
+  title: string;
+  content: string;
+  datasetId: string;
+  datasetName: string;
+  documentId: string;
+  documentName: string;
+  segmentId: string;
+  score: number;
+  position: number;
+  metadata?: Record<string, unknown>;
+}
 
 @Injectable()
 export class SourceHydrator {
@@ -15,7 +27,7 @@ export class SourceHydrator {
     @InjectRepository(DatasetDocument)
     private readonly documentRepo: Repository<DatasetDocument>,
     @InjectRepository(Dataset)
-    private readonly datasetRepo: Repository<Dataset>,
+    private readonly datasetRepo: Repository<Dataset>
   ) {}
 
   async hydrate(hits: SearchHit[]): Promise<Source[]> {
@@ -24,17 +36,23 @@ export class SourceHydrator {
     const segments = await this.segmentRepo.find({
       where: { id: In(hits.map((hit) => hit.segmentId)) },
     });
-    const segmentById = new Map(segments.map((segment) => [segment.id, segment]));
+    const segmentById = new Map(
+      segments.map((segment) => [segment.id, segment])
+    );
 
     const documents = await this.documentRepo.find({
       where: { id: In(segments.map((segment) => segment.documentId)) },
     });
-    const documentById = new Map(documents.map((document) => [document.id, document]));
+    const documentById = new Map(
+      documents.map((document) => [document.id, document])
+    );
 
     const datasets = await this.datasetRepo.find({
       where: { id: In(segments.map((segment) => segment.datasetId)) },
     });
-    const datasetById = new Map(datasets.map((dataset) => [dataset.id, dataset]));
+    const datasetById = new Map(
+      datasets.map((dataset) => [dataset.id, dataset])
+    );
 
     return hits.flatMap((hit) => {
       const segment = segmentById.get(hit.segmentId);

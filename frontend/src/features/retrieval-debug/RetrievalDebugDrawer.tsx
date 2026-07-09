@@ -25,7 +25,7 @@ const defaultFormState: RetrievalDebugFormState = {
 };
 
 const inputClass =
-  "mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10 transition";
+  "mt-2 w-full rounded-xl border border-white/14 bg-white/[0.08] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10 transition";
 const labelClass = "text-sm font-medium text-white/70";
 
 export function RetrievalDebugDrawer({
@@ -107,7 +107,7 @@ export function RetrievalDebugDrawer({
 
           <div className="grid min-h-0 flex-1 lg:grid-cols-[320px_minmax(0,1fr)]">
             {/* Form panel */}
-            <div className="border-r border-white/8 bg-[#0d0d14] px-5 py-5">
+            <div className="border-r border-white/8 bg-[#2a2346] px-5 py-5">
               <div className="space-y-4">
                 <label className="block">
                   <div className={labelClass}>Query</div>
@@ -127,7 +127,7 @@ export function RetrievalDebugDrawer({
                 <label className="block">
                   <div className={labelClass}>Retrieval Mode</div>
                   <select
-                    className={`${inputClass} bg-black/50`}
+                    className={`${inputClass} bg-white/[0.12]`}
                     value={form.retrievalMode}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -182,7 +182,7 @@ export function RetrievalDebugDrawer({
                 </div>
 
                 {/* Dataset selection */}
-                <div className="rounded-xl border border-white/8 bg-black/20 px-4 py-4">
+                <div className="rounded-xl border border-white/12 bg-white/[0.06] px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium text-white/70">
@@ -206,7 +206,7 @@ export function RetrievalDebugDrawer({
                     )}
                   </div>
                   {bindings.length === 0 ? (
-                    <div className="mt-3 rounded-lg border border-dashed border-white/10 bg-black/20 px-3 py-3 text-sm text-white/40">
+                    <div className="mt-3 rounded-lg border border-dashed border-white/14 bg-white/[0.06] px-3 py-3 text-sm text-white/45">
                       No dataset is currently bound to this app.
                     </div>
                   ) : (

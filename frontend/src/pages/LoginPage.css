@@ -13,7 +13,7 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  background: #0a0a0a;
+  background: #f6f3ff;
   overflow-x: hidden;
   height: 100%;
 }
@@ -24,25 +24,25 @@
   background:
     radial-gradient(
       ellipse at 15% 40%,
-      rgba(160, 104, 255, 0.28) 0%,
+      rgba(196, 181, 253, 0.72) 0%,
       transparent 50%
     ),
     radial-gradient(
       ellipse at 85% 15%,
-      rgba(66, 220, 219, 0.18) 0%,
+      rgba(103, 232, 249, 0.28) 0%,
       transparent 45%
     ),
     radial-gradient(
       ellipse at 70% 85%,
-      rgba(120, 80, 200, 0.22) 0%,
+      rgba(233, 213, 255, 0.88) 0%,
       transparent 45%
     ),
     radial-gradient(
       ellipse at 40% 90%,
-      rgba(160, 104, 255, 0.12) 0%,
+      rgba(167, 139, 250, 0.18) 0%,
       transparent 40%
     ),
-    linear-gradient(135deg, #1a1230 0%, #15102a 25%, #0f1628 55%, #0a0a0a 100%);
+    linear-gradient(135deg, #fdfcff 0%, #f6f2ff 25%, #f1efff 55%, #eef6ff 100%);
   background-attachment: fixed;
   position: relative;
   display: flex;

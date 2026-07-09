@@ -18,7 +18,7 @@ export function CollapsibleTextBlock({
   }, [text, collapseState.isCollapsedByDefault]);
 
   return (
-    <div className="rounded-xl border border-white/8 bg-black/20">
+    <div className="rounded-xl border border-white/12 bg-white/[0.06]">
       <div className="flex items-center justify-between border-b border-white/8 px-3 py-2">
         <div className="text-sm font-medium text-white/70">Context</div>
         {collapseState.isCollapsedByDefault && (

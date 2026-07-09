@@ -42,6 +42,14 @@ export interface AppDto {
   createdAt: string;
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface WorkflowDto {
   id: string;
   appId: string;
@@ -178,3 +186,29 @@ export type GraphEngineEvent =
       message: string;
       timestamp: number;
     };
+
+export interface DatasetDocumentDto {
+  id: string;
+  datasetId: string;
+  name: string;
+  sourceType: "text" | "markdown" | "file";
+  sourceUri: string | null;
+  content: string;
+  status: "pending" | "indexing" | "completed" | "failed";
+  errorMessage: string | null;
+  docHash: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDatasetDto {
+  name: string;
+  description?: string;
+  retrievalMode?: "keyword" | "semantic" | "hybrid";
+  indexingMode?: "economy" | "high_quality";
+  chunkSize?: number;
+  chunkOverlap?: number;
+  topK?: number;
+  scoreThreshold?: number;
+}

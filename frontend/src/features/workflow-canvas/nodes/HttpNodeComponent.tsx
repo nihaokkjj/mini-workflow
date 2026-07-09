@@ -16,7 +16,7 @@ function HttpNodeComponent({ data }: { data: Record<string, unknown> }) {
         <span className="text-lg">🌐</span>
         <span className="font-semibold text-node-retrieval">HTTP</span>
       </div>
-      <div className="mt-1 truncate font-mono text-xs text-white/40">
+      <div className="mt-1 truncate font-mono text-xs text-[#3e6f7c]">
         {preview}
       </div>
       <Handle type="source" position={Position.Bottom} />

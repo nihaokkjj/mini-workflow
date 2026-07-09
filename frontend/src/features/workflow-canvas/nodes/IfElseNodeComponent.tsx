@@ -13,7 +13,7 @@ function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
         <span className="text-lg">🔀</span>
         <span className="font-semibold text-node-condition">If/Else</span>
       </div>
-      <div className="rounded bg-black/20 px-2 py-1 font-mono text-xs text-white/50">
+      <div className="rounded bg-white/75 px-2 py-1 font-mono text-xs text-[#5e4b85]">
         {preview}
       </div>
       <div className="mt-2 flex justify-between">

@@ -5,7 +5,10 @@ import { Repository } from "typeorm";
 import { Dataset } from "../../../database/entities/dataset.entity";
 import { DatasetDocument } from "../../../database/entities/dataset-document.entity";
 import { DocumentSegment } from "../../../database/entities/document-segment.entity";
-import { SEARCH_INDEX_ADAPTER, SearchIndexAdapter } from "../adapters/search-index.adapter";
+import {
+  SEARCH_INDEX_ADAPTER,
+  SearchIndexAdapter,
+} from "../adapters/search-index.adapter";
 import { CleanProcessor } from "./clean/clean-processor";
 import { ExtractProcessor } from "./extract/extract-processor";
 import { SplitProcessor } from "./split/split-processor";
@@ -19,13 +22,17 @@ export class RagIndexingOrchestrator {
     private readonly cleanProcessor: CleanProcessor,
     private readonly splitProcessor: SplitProcessor,
     @Inject(SEARCH_INDEX_ADAPTER)
-    private readonly searchIndex: SearchIndexAdapter,
+    private readonly searchIndex: SearchIndexAdapter
   ) {}
 
-  async indexDocument(dataset: Dataset, document: DatasetDocument): Promise<void> {
+  async indexDocument(
+    dataset: Dataset,
+    document: DatasetDocument
+  ): Promise<void> {
     const payloads = await this.extractProcessor.extract({
       sourceType: document.sourceType,
       content: document.content,
+      sourceUri: document.sourceUri,
     });
 
     const normalizedContent = payloads
@@ -56,8 +63,8 @@ export class RagIndexingOrchestrator {
           docHash: this.hashChunk(chunk.content),
           metadata: document.metadata ?? null,
           searchText: chunk.content.toLowerCase(),
-        }),
-      ),
+        })
+      )
     );
 
     await this.searchIndex.upsertSegments(
@@ -66,7 +73,7 @@ export class RagIndexingOrchestrator {
         datasetId: segment.datasetId,
         documentId: segment.documentId,
         content: segment.searchText,
-      })),
+      }))
     );
   }
 

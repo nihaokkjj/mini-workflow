@@ -128,7 +128,7 @@ function WorkflowCanvasInner({
       <NodePalette />
       <div className="flex flex-1 flex-col">
         {/* Toolbar */}
-        <div className="flex h-12 items-center gap-3 border-b border-white/8 bg-canvas px-4">
+        <div className="flex h-12 items-center gap-3 border-b border-violet-200/80 bg-white/70 px-4 backdrop-blur">
           <button
             onClick={handleSave}
             className="rounded-lg px-4 py-1.5 text-sm font-medium text-white transition hover:brightness-110"
@@ -154,7 +154,7 @@ function WorkflowCanvasInner({
             </button>
           )}
           {runState.executingNodeId && (
-            <span className="text-sm text-white/50">
+            <span className="text-sm text-[#6b5a8b]">
               Executing:{" "}
               <span className="font-mono text-node-llm">
                 {runState.executingNodeId}
@@ -172,11 +172,11 @@ function WorkflowCanvasInner({
         >
           {canvas.nodes.length === 0 && (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-              <div className="rounded-xl border border-dashed border-white/10 bg-canvas/85 px-5 py-4 text-center backdrop-blur">
-                <div className="text-sm font-medium text-white/70">
+              <div className="rounded-xl border border-dashed border-violet-200 bg-white/85 px-5 py-4 text-center backdrop-blur">
+                <div className="text-sm font-medium text-[#2f2147]">
                   Drag nodes from the left panel
                 </div>
-                <div className="mt-1 text-xs text-white/40">
+                <div className="mt-1 text-xs text-[#7b6b9d]">
                   Start with Start, add work nodes, then connect to End.
                 </div>
               </div>
@@ -196,11 +196,11 @@ function WorkflowCanvasInner({
             snapGrid={[16, 16]}
             fitView
           >
-            <Background color="rgba(255,255,255,0.04)" gap={16} />
-            <Controls className="[&>button]:!bg-canvas [&>button]:!border-white/10 [&>button]:!text-white/60" />
+            <Background color="rgba(255,255,255,0.08)" gap={16} />
+            <Controls className="[&>button]:!bg-white/95 [&>button]:!border-violet-200 [&>button]:!text-[#5e4b85]" />
             <MiniMap
               maskColor="rgba(0,0,0,0.5)"
-              className="!border-white/8 !bg-canvas"
+              className="!border-violet-200 !bg-white/95"
             />
           </ReactFlow>
         </div>
@@ -224,7 +224,7 @@ function WorkflowCanvasInner({
         />
       )}
       {toast && (
-        <div className="fixed right-4 top-14 z-50 flex items-center gap-2 rounded-lg border border-white/10 bg-[#1a1a2e] px-4 py-3 text-sm text-white shadow-xl backdrop-blur-2xl">
+        <div className="fixed right-4 top-14 z-50 flex items-center gap-2 rounded-lg border border-violet-200 bg-white/95 px-4 py-3 text-sm text-[#2f2147] shadow-xl backdrop-blur-2xl">
           <span
             className={`h-2 w-2 rounded-full ${
               toast.tone === "error"

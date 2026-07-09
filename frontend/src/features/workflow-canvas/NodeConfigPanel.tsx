@@ -52,12 +52,12 @@ const SUPPORTED_LLM_MODELS: SupportedModelOption[] = [
   },
 ];
 
-/* ---------- Shared input classes for dark theme ---------- */
+/* ---------- 共享输入样式：提亮表单层级，减少纯黑控件 ---------- */
 const inputClass =
-  "rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10 transition";
+  "rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm text-[#2f2147] placeholder:text-[#8b7aa9] focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10 transition";
 const labelClass =
-  "text-xs font-semibold uppercase tracking-[0.8px] text-white/50";
-const hintClass = "text-xs text-white/30";
+  "text-xs font-semibold uppercase tracking-[0.8px] text-[#6b5a8b]";
+const hintClass = "text-xs text-[#7b6b9d]";
 
 function StartConfig({
   data,
@@ -132,7 +132,7 @@ function LLMConfig({
       <label className="flex flex-col gap-1">
         <span className={labelClass}>Model</span>
         <select
-          className={`${inputClass} bg-black/50`}
+          className={`${inputClass} bg-white/[0.12]`}
           value={selectedModel}
           onChange={(e) => handleModelChange(e.target.value)}
         >
@@ -229,7 +229,7 @@ function HttpConfig({
       <label className="flex flex-col gap-1">
         <span className={labelClass}>Method</span>
         <select
-          className={`${inputClass} bg-black/50`}
+          className={`${inputClass} bg-white/[0.12]`}
           value={(data.method as string) || "GET"}
           onChange={(e) => onChange({ ...data, method: e.target.value })}
         >
@@ -364,7 +364,7 @@ function KnowledgeRetrievalConfig({
       <label className="flex flex-col gap-1">
         <span className={labelClass}>Retrieval Mode</span>
         <select
-          className={`${inputClass} bg-black/50`}
+          className={`${inputClass} bg-white/[0.12]`}
           value={(data.retrievalMode as string) || "keyword"}
           onChange={(e) => onChange({ ...data, retrievalMode: e.target.value })}
         >
@@ -373,11 +373,11 @@ function KnowledgeRetrievalConfig({
           <option value="hybrid">hybrid</option>
         </select>
       </label>
-      <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-white/[0.03] p-3">
+      <div className="flex flex-col gap-2 rounded-lg border border-violet-200 bg-white/90 p-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm font-medium text-white/80">Datasets</div>
-            <p className="mt-1 text-xs text-white/40">
+            <div className="text-sm font-medium text-[#2f2147]">Datasets</div>
+            <p className="mt-1 text-xs text-[#7b6b9d]">
               Selecting one or more datasets switches to explicit selection.
               Clear them all to use every bound dataset.
             </p>
@@ -386,19 +386,19 @@ function KnowledgeRetrievalConfig({
             <button
               type="button"
               onClick={() => onChange(clearExplicitDatasetSelection(data))}
-              className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-white/60 ring-1 ring-white/15 hover:bg-white/20"
+              className="rounded-md bg-violet-50 px-2.5 py-1 text-xs font-medium text-[#5e4b85] ring-1 ring-violet-200 hover:bg-violet-100"
             >
               Use all
             </button>
           )}
         </div>
-        <div className="rounded-md border border-white/8 bg-black/20 px-3 py-2 text-xs text-white/50">
+        <div className="rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-[#5e4b85]">
           {isUsingAllBoundDatasets
             ? `Using all ${bindings.length} bound dataset${bindings.length === 1 ? "" : "s"}`
             : `Using ${selectedDatasetIds.length} explicitly selected dataset${selectedDatasetIds.length === 1 ? "" : "s"}`}
         </div>
         {bindings.length === 0 ? (
-          <div className="rounded-md border border-dashed border-white/10 bg-black/20 px-3 py-4 text-sm text-white/40">
+          <div className="rounded-md border border-dashed border-violet-200 bg-white/90 px-3 py-4 text-sm text-[#7b6b9d]">
             No dataset is bound to this app yet. Bind one from the editor header
             first.
           </div>
@@ -409,11 +409,11 @@ function KnowledgeRetrievalConfig({
               return (
                 <label
                   key={binding.id}
-                  className="flex cursor-pointer items-start gap-3 rounded-md border border-white/8 bg-black/20 px-3 py-3"
+                  className="flex cursor-pointer items-start gap-3 rounded-md border border-violet-200 bg-white/90 px-3 py-3"
                 >
                   <input
                     type="checkbox"
-                    className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/30 accent-accent"
+                    className="mt-0.5 h-4 w-4 rounded border-violet-200 bg-white accent-accent"
                     checked={isSelected}
                     onChange={() =>
                       onChange(
@@ -422,10 +422,10 @@ function KnowledgeRetrievalConfig({
                     }
                   />
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-white/80">
+                    <div className="text-sm font-medium text-[#2f2147]">
                       {binding.dataset.name}
                     </div>
-                    <div className="mt-1 truncate font-mono text-[11px] text-white/30">
+                    <div className="mt-1 truncate font-mono text-[11px] text-[#8b7aa9]">
                       {binding.datasetId}
                     </div>
                   </div>
@@ -549,14 +549,14 @@ export function NodeConfigPanel({
   };
 
   return (
-    <div className="flex h-full w-80 flex-col border-l border-white/8 bg-canvas">
-      <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
-        <h3 className="text-sm font-semibold text-white/80">
+    <div className="flex h-full w-80 flex-col border-l border-violet-200/80 bg-white/70 backdrop-blur">
+      <div className="flex items-center justify-between border-b border-violet-200/80 px-4 py-3">
+        <h3 className="text-sm font-semibold text-[#2f2147]">
           {node.type.toUpperCase()} Configuration
         </h3>
         <button
           onClick={onClose}
-          className="text-lg leading-none text-white/30 transition hover:text-white/70"
+          className="text-lg leading-none text-[#8b7aa9] transition hover:text-[#4b377f]"
         >
           ✕
         </button>
@@ -564,8 +564,8 @@ export function NodeConfigPanel({
       <div className="flex-1 overflow-y-auto p-4">
         {renderer(node.data, handleChange, appDatasets)}
       </div>
-      <div className="border-t border-white/8 px-4 py-3 text-xs text-white/30">
-        Node ID: <code className="font-mono text-white/50">{node.id}</code>
+      <div className="border-t border-violet-200/80 px-4 py-3 text-xs text-[#7b6b9d]">
+        Node ID: <code className="font-mono text-[#5e4b85]">{node.id}</code>
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ export class RagDatasetService {
     private readonly bindingRepo: Repository<AppDatasetBinding>,
     @InjectRepository(DatasetDocument)
     private readonly documentRepo: Repository<DatasetDocument>,
-    private readonly ragIndexing: RagIndexingOrchestrator,
+    private readonly ragIndexing: RagIndexingOrchestrator
   ) {}
 
   async createDataset(dto: CreateDatasetDto): Promise<Dataset> {
@@ -49,7 +49,10 @@ export class RagDatasetService {
     return dataset;
   }
 
-  async createDocument(datasetId: string, dto: CreateDocumentDto): Promise<DatasetDocument> {
+  async createDocument(
+    datasetId: string,
+    dto: CreateDocumentDto
+  ): Promise<DatasetDocument> {
     const dataset = await this.getDataset(datasetId);
 
     const document = await this.documentRepo.save(
@@ -63,7 +66,7 @@ export class RagDatasetService {
         errorMessage: null,
         docHash: createHash("sha256").update(dto.content).digest("hex"),
         metadata: dto.metadata ?? null,
-      }),
+      })
     );
 
     try {
@@ -72,10 +75,59 @@ export class RagDatasetService {
       document.errorMessage = null;
     } catch (error) {
       document.status = "failed";
-      document.errorMessage = error instanceof Error ? error.message : "Unknown indexing error";
+      document.errorMessage =
+        error instanceof Error ? error.message : "Unknown indexing error";
     }
 
     return this.documentRepo.save(document);
+  }
+
+  async uploadDocument(
+    datasetId: string,
+    name: string | undefined,
+    file: Express.Multer.File
+  ): Promise<DatasetDocument> {
+    const dataset = await this.getDataset(datasetId);
+
+    const document = await this.documentRepo.save(
+      this.documentRepo.create({
+        datasetId,
+        name: name || file.originalname,
+        sourceType: "file",
+        sourceUri: file.path,
+        content: "",
+        status: "pending",
+        errorMessage: null,
+        docHash: "",
+        metadata: null,
+      })
+    );
+
+    // Fire-and-forget async indexing — don't block the upload response
+    this.indexDocumentAsync(document, dataset);
+
+    return document;
+  }
+
+  private async indexDocumentAsync(
+    document: DatasetDocument,
+    dataset: Dataset
+  ): Promise<void> {
+    try {
+      document.status = "indexing";
+      await this.documentRepo.save(document);
+
+      await this.ragIndexing.indexDocument(dataset, document);
+
+      document.status = "completed";
+      document.errorMessage = null;
+    } catch (error) {
+      document.status = "failed";
+      document.errorMessage =
+        error instanceof Error ? error.message : "Unknown indexing error";
+    } finally {
+      await this.documentRepo.save(document);
+    }
   }
 
   listDocuments(datasetId: string): Promise<DatasetDocument[]> {
@@ -85,7 +137,10 @@ export class RagDatasetService {
     });
   }
 
-  async bindDataset(appId: string, datasetId: string): Promise<AppDatasetBinding> {
+  async bindDataset(
+    appId: string,
+    datasetId: string
+  ): Promise<AppDatasetBinding> {
     const app = await this.appRepo.findOneBy({ id: appId });
     if (!app) throw new NotFoundException("App not found");
 
@@ -98,7 +153,7 @@ export class RagDatasetService {
       this.bindingRepo.create({
         appId: app.id,
         datasetId: dataset.id,
-      }),
+      })
     );
   }
 

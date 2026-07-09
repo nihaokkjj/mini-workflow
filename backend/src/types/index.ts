@@ -1,4 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsIn,
+  IsObject,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  Min,
+  MaxLength,
+} from "class-validator";
+import { Type } from "class-transformer";
 
 // ==================== Node & Graph Types ====================
 
@@ -140,6 +153,8 @@ export class CreateWorkflowDto {
     description: "所属应用的 ID",
     example: "550e8400-e29b-41d4-a716-446655440000",
   })
+  @IsString()
+  @IsNotEmpty()
   appId: string;
 
   @ApiProperty({
@@ -174,6 +189,7 @@ export class CreateWorkflowDto {
       ],
     },
   })
+  @IsObject()
   graph: Graph;
 }
 
@@ -182,12 +198,15 @@ export class RunWorkflowDto {
     description: "要执行的工作流 ID",
     example: "550e8400-e29b-41d4-a716-446655440001",
   })
+  @IsString()
+  @IsNotEmpty()
   workflowId: string;
 
   @ApiProperty({
     description: "执行工作流的输入变量（键值对）",
     example: { query: "什么是人工智能？" },
   })
+  @IsObject()
   inputs: Record<string, unknown>;
 }
 
@@ -196,12 +215,18 @@ export class CreateAppDto {
     description: "应用名称",
     example: "我的 AI 助手",
   })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
   @ApiPropertyOptional({
     description: "应用描述",
     example: "一个智能问答机器人",
   })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   description?: string;
 
   @ApiPropertyOptional({
@@ -210,6 +235,8 @@ export class CreateAppDto {
     enum: ["chat", "workflow"],
     default: "workflow",
   })
+  @IsOptional()
+  @IsIn(["chat", "workflow"])
   mode?: "chat" | "workflow";
 }
 
@@ -218,6 +245,8 @@ export class CreateConversationDto {
     description: "所属应用的 ID",
     example: "550e8400-e29b-41d4-a716-446655440000",
   })
+  @IsString()
+  @IsNotEmpty()
   appId: string;
 }
 
@@ -226,11 +255,50 @@ export class ChatRunDto {
     description: "要执行的工作流 ID",
     example: "550e8400-e29b-41d4-a716-446655440001",
   })
+  @IsString()
+  @IsNotEmpty()
   workflowId: string;
 
   @ApiProperty({
     description: "用户输入（键值对，通常包含 query 字段）",
     example: { query: "帮我写一首关于春天的诗" },
   })
+  @IsObject()
   inputs: Record<string, unknown>;
+}
+
+// ==================== Pagination ====================
+
+export class PaginationDto {
+  @ApiPropertyOptional({
+    description: "页码（从 1 开始）",
+    example: 1,
+    default: 1,
+    minimum: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  page?: number;
+
+  @ApiPropertyOptional({
+    description: "每页条数",
+    example: 20,
+    default: 20,
+    minimum: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  pageSize?: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }

@@ -7,7 +7,7 @@
 - **产品**：可视化 LLM 工作流构建器 — 在画布上编排 AI 管道
 - **用户**：构建 AI 应用的开发者与技术创作者，在编辑器内长时间停留
 - **核心交互**：读取节点图 → 理解数据流 → 配置参数 → 运行验证
-- **视觉方向**：围绕模块化合成器的概念展开 — 暗色工作室、信号路径、语义颜色区分节点角色
+- **视觉方向**：围绕模块化合成器的概念展开 — 白紫工作台、柔和信号高光、语义颜色区分节点角色
 
 ## 2. 色彩系统
 
@@ -17,12 +17,12 @@
 
 | 令牌          | 色值                     | CSS 变量                | 用途                     |
 | ------------- | ------------------------ | ----------------------- | ------------------------ |
-| Base          | `#100e1c`                | `--color-base`          | 根背景色，深紫底而非纯黑 |
-| Surface       | `rgba(255,255,255,0.03)` | `--color-surface`       | 卡片、面板、抽屉背景     |
-| Elevated      | `rgba(255,255,255,0.06)` | `--color-elevated`      | 悬浮态、hover 表层       |
-| Border        | `rgba(255,255,255,0.08)` | `--color-border`        | 默认描边                 |
-| Border-strong | `rgba(255,255,255,0.12)` | `--color-border-strong` | 高对比描边               |
-| Input-bg      | `rgba(0,0,0,0.3)`        | `--color-input-bg`      | 输入框填充               |
+| Base          | `#f6f3ff`                | `--color-base`          | 根背景色，偏紫白的工作台 |
+| Surface       | `rgba(255,255,255,0.78)` | `--color-surface`       | 卡片、面板、抽屉背景     |
+| Elevated      | `rgba(255,255,255,0.92)` | `--color-elevated`      | 悬浮态、hover 表层       |
+| Border        | `rgba(124,58,237,0.14)`  | `--color-border`        | 默认描边                 |
+| Border-strong | `rgba(124,58,237,0.24)`  | `--color-border-strong` | 高对比描边               |
+| Input-bg      | `rgba(255,255,255,0.92)` | `--color-input-bg`      | 输入框填充               |
 
 ### 2.2 品牌强调色
 
@@ -47,43 +47,43 @@
 
 ### 2.4 文字层级
 
-| 层级        | 色值                     | CSS 变量             | 用途             |
-| ----------- | ------------------------ | -------------------- | ---------------- |
-| Primary     | `#ffffff`                | `--text-primary`     | 标题、正文       |
-| Secondary   | `rgba(255,255,255,0.8)`  | `--text-secondary`   | 导航项、卡片描述 |
-| Label       | `rgba(255,255,255,0.6)`  | `--text-label`       | 表单标签、小标题 |
-| Muted       | `rgba(255,255,255,0.5)`  | `--text-muted`       | 时间戳、元信息   |
-| Disabled    | `rgba(255,255,255,0.3)`  | `--text-disabled`    | 禁用态文字       |
-| Placeholder | `rgba(255,255,255,0.25)` | `--text-placeholder` | 输入占位符       |
+| 层级        | 色值                    | CSS 变量             | 用途             |
+| ----------- | ----------------------- | -------------------- | ---------------- |
+| Primary     | `#2f2147`               | `--text-primary`     | 标题、正文       |
+| Secondary   | `rgba(47,33,71,0.8)`    | `--text-secondary`   | 导航项、卡片描述 |
+| Label       | `rgba(70,53,102,0.72)`  | `--text-label`       | 表单标签、小标题 |
+| Muted       | `rgba(88,72,119,0.64)`  | `--text-muted`       | 时间戳、元信息   |
+| Disabled    | `rgba(106,92,136,0.4)`  | `--text-disabled`    | 禁用态文字       |
+| Placeholder | `rgba(106,92,136,0.42)` | `--text-placeholder` | 输入占位符       |
 
 ### 2.5 背景渐变氛围层
 
-页面底色使用深紫色底叠加多层径向渐变，避免纯黑：
+页面底色使用白紫渐变与柔和高光，避免深色背景带来的压迫感：
 
 ```css
-/* 全局氛围背景 — 紫色为主，底部带微量蓝青 */
+/* 全局氛围背景 — 白紫工作台，紫色为主，辅以青色高光 */
 background:
   radial-gradient(
-    ellipse at 15% 30%,
-    rgba(160, 104, 255, 0.18) 0%,
+    ellipse at 12% 18%,
+    rgba(196, 181, 253, 0.72) 0%,
     transparent 50%
   ),
   radial-gradient(
-    ellipse at 80% 60%,
-    rgba(120, 80, 200, 0.14) 0%,
-    transparent 45%
+    ellipse at 85% 22%,
+    rgba(103, 232, 249, 0.28) 0%,
+    transparent 42%
   ),
   radial-gradient(
-    ellipse at 50% 90%,
-    rgba(140, 90, 220, 0.1) 0%,
+    ellipse at 50% 88%,
+    rgba(233, 213, 255, 0.88) 0%,
     transparent 40%
   ),
   radial-gradient(
-    ellipse at 85% 20%,
-    rgba(66, 220, 219, 0.06) 0%,
-    transparent 50%
+    ellipse at 78% 70%,
+    rgba(167, 139, 250, 0.18) 0%,
+    transparent 40%
   ),
-  linear-gradient(180deg, #1a1230 0%, #15102a 25%, #100e1c 60%, #0f1122 100%);
+  linear-gradient(180deg, #fdfcff 0%, #f6f2ff 26%, #f3efff 60%, #eef6ff 100%);
 ```
 
 ## 3. 排版

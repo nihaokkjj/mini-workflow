@@ -1,18 +1,38 @@
 import { config } from "dotenv";
 import { resolve } from "path";
+import { mkdirSync } from "node:fs";
 
 // Load .env from the project root
 config({ path: resolve(__dirname, "..", ".env") });
 
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { Logger } from "nestjs-pino";
 import { AppRootModule } from "./app.module";
+import { UPLOAD_DIR } from "./common/upload/upload.config";
+
+// Ensure upload directory exists before any request can write to it
+mkdirSync(UPLOAD_DIR, { recursive: true });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppRootModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppRootModule, {
+    bufferLogs: true,
+  });
   app.useLogger(app.get(Logger));
+
+  // Serve uploaded files so frontend can reference them
+  app.useStaticAssets(UPLOAD_DIR, { prefix: "/uploads" });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // strip unknown properties
+      forbidNonWhitelisted: true, // reject requests with unknown properties
+      transform: true, // auto-transform payloads to DTO instances
+    })
+  );
 
   const corsOrigins = [
     "http://localhost:5173",

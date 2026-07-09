@@ -1,7 +1,21 @@
-import { Controller, Get, Post, Delete, Param, Body } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiParam, ApiResponse } from "@nestjs/swagger";
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  Query,
+} from "@nestjs/common";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+} from "@nestjs/swagger";
 import { AppService } from "./app.service";
-import { CreateAppDto } from "../../types";
+import { CreateAppDto, PaginationDto } from "../../types";
 
 @ApiTags("应用管理")
 @Controller("api/apps")
@@ -21,12 +35,14 @@ export class AppController {
 
   @Get()
   @ApiOperation({
-    summary: "获取所有应用",
-    description: "返回所有已创建的应用列表",
+    summary: "获取所有应用（分页）",
+    description: "分页返回应用列表，支持 page 和 pageSize 参数",
   })
-  @ApiResponse({ status: 200, description: "应用列表" })
-  findAll() {
-    return this.service.findAll();
+  @ApiQuery({ name: "page", required: false, type: Number, example: 1 })
+  @ApiQuery({ name: "pageSize", required: false, type: Number, example: 20 })
+  @ApiResponse({ status: 200, description: "分页应用列表" })
+  findAll(@Query() pagination: PaginationDto) {
+    return this.service.findAll(pagination.page, pagination.pageSize);
   }
 
   @Get(":id")

@@ -16,12 +16,12 @@ import { RagModule } from "./modules/rag/rag.module";
     TypeOrmModule.forRootAsync({
       useFactory: () => dataSource.options,
     }),
-    AppModule,
-    WorkflowModule,
-    RunModule,
-    ConversationModule,
-    ModelModule,
-    RagModule,
+    AppModule, //应用管理
+    WorkflowModule, //工作流CRUD
+    RunModule, //工作流执行 + SSE流式输出
+    ConversationModule, //对话管理
+    ModelModule, //模型列表
+    RagModule, //知识库检索（RAG）
   ],
 })
 export class AppRootModule {}

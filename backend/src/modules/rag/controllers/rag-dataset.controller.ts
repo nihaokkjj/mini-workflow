@@ -1,5 +1,22 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import {
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import { createMulterOptions } from "../../../common/upload/multer.config";
 import { CreateDatasetDto } from "../dto/create-dataset.dto";
 import { CreateDocumentDto } from "../dto/create-document.dto";
 import { RagDatasetService } from "../services/rag-dataset.service";
@@ -32,8 +49,24 @@ export class RagDatasetController {
   @Post("rag/datasets/:id/documents")
   @ApiOperation({ summary: "向知识库添加文档并建立索引" })
   @ApiParam({ name: "id", example: "550e8400-e29b-41d4-a716-446655440010" })
-  createDocument(@Param("id") datasetId: string, @Body() dto: CreateDocumentDto) {
+  createDocument(
+    @Param("id") datasetId: string,
+    @Body() dto: CreateDocumentDto
+  ) {
     return this.ragDatasetService.createDocument(datasetId, dto);
+  }
+
+  @Post("rag/datasets/:id/documents/upload")
+  @ApiOperation({ summary: "上传文件到知识库" })
+  @ApiParam({ name: "id", example: "550e8400-e29b-41d4-a716-446655440010" })
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(FileInterceptor("file", createMulterOptions()))
+  async uploadDocument(
+    @Param("id") datasetId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body("name") name?: string
+  ) {
+    return this.ragDatasetService.uploadDocument(datasetId, name, file);
   }
 
   @Get("rag/datasets/:id/documents")
@@ -45,7 +78,10 @@ export class RagDatasetController {
 
   @Post("apps/:appId/datasets/:datasetId")
   @ApiOperation({ summary: "将知识库绑定到应用" })
-  bindDataset(@Param("appId") appId: string, @Param("datasetId") datasetId: string) {
+  bindDataset(
+    @Param("appId") appId: string,
+    @Param("datasetId") datasetId: string
+  ) {
     return this.ragDatasetService.bindDataset(appId, datasetId);
   }
 
@@ -57,7 +93,10 @@ export class RagDatasetController {
 
   @Delete("apps/:appId/datasets/:datasetId")
   @ApiOperation({ summary: "解除应用与知识库绑定" })
-  removeBinding(@Param("appId") appId: string, @Param("datasetId") datasetId: string) {
+  removeBinding(
+    @Param("appId") appId: string,
+    @Param("datasetId") datasetId: string
+  ) {
     return this.ragDatasetService.unbindDataset(appId, datasetId);
   }
 }

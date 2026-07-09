@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from "typeorm";
 import { App } from "./app.entity";
 import type { Graph } from "../../types";
 
@@ -8,6 +17,7 @@ export class Workflow {
   id: string;
 
   @Column()
+  @Index({ unique: true })
   appId: string;
 
   @ManyToOne(() => App, (app) => app.workflows, { onDelete: "CASCADE" })

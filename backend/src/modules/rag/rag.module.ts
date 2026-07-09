@@ -14,11 +14,8 @@ import { CleanProcessor } from "./indexing/clean/clean-processor";
 import { ExtractProcessor } from "./indexing/extract/extract-processor";
 import { RagIndexingOrchestrator } from "./indexing/rag-indexing.orchestrator";
 import { SplitProcessor } from "./indexing/split/split-processor";
-import { ContextAssembler } from "./retrieval/context-assembler";
 import { DatasetSelector } from "./retrieval/dataset-selector";
 import { RagRetrievalOrchestrator } from "./retrieval/rag-retrieval.orchestrator";
-import { RetrievalPolicyResolver } from "./retrieval/retrieval-policy-resolver";
-import { RetrievalTraceBuilder } from "./retrieval/retrieval-trace-builder";
 import { SourceHydrator } from "./retrieval/source-hydrator";
 import { RagDatasetService } from "./services/rag-dataset.service";
 
@@ -40,10 +37,7 @@ import { RagDatasetService } from "./services/rag-dataset.service";
     CleanProcessor,
     SplitProcessor,
     DatasetSelector,
-    RetrievalPolicyResolver,
     SourceHydrator,
-    ContextAssembler,
-    RetrievalTraceBuilder,
     RagIndexingOrchestrator,
     RagRetrievalOrchestrator,
     SqliteKeywordIndexAdapter,

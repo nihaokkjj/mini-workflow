@@ -135,15 +135,15 @@ export default function ChatPage() {
   return (
     <div className="flex h-full">
       {/* Sidebar */}
-      <aside className="flex w-72 flex-col border-r border-white/8 bg-canvas">
-        <div className="flex h-12 items-center justify-between border-b border-white/8 px-4">
+      <aside className="flex w-72 flex-col border-r border-violet-200/80 bg-white/68 backdrop-blur">
+        <div className="flex h-12 items-center justify-between border-b border-violet-200/80 px-4">
           <button
             onClick={() => navigate("/")}
-            className="text-sm text-white/50 transition hover:text-white"
+            className="text-sm text-[#6b5a8b] transition hover:text-[#2f2147]"
           >
             ← Back
           </button>
-          <span className="truncate text-sm font-semibold text-white/70">
+          <span className="truncate text-sm font-semibold text-[#4b377f]">
             {app?.name}
           </span>
         </div>
@@ -170,10 +170,10 @@ export default function ChatPage() {
               className={`flex cursor-pointer items-center justify-between rounded-lg p-3 text-sm transition ${
                 selectedId === c.id
                   ? "border border-accent/30 bg-accent/[0.08]"
-                  : "border border-transparent hover:bg-white/5"
+                  : "border border-transparent hover:bg-violet-50"
               }`}
             >
-              <span className="truncate text-white/70">
+              <span className="truncate text-[#5e4b85]">
                 Conversation {c.id.slice(0, 8)}
               </span>
               <button
@@ -181,7 +181,7 @@ export default function ChatPage() {
                   e.stopPropagation();
                   handleDelete(c.id);
                 }}
-                className="ml-2 text-white/20 transition hover:text-red-400"
+                className="ml-2 text-[#b2a6cc] transition hover:text-red-500"
               >
                 🗑
               </button>
@@ -191,7 +191,7 @@ export default function ChatPage() {
       </aside>
 
       {/* Chat area */}
-      <div className="flex flex-1 flex-col bg-[#0d0d14]">
+      <div className="flex flex-1 flex-col bg-[#f3efff]">
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
           {displayMessages.map((m) => (
             <div
@@ -202,7 +202,7 @@ export default function ChatPage() {
                 className={`max-w-[70%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap ${
                   m.role === "user"
                     ? "bg-accent text-white"
-                    : "border border-white/8 bg-black/30 text-white/80"
+                    : "border border-violet-200 bg-white/92 text-[#2f2147]"
                 }`}
               >
                 {m.content}
@@ -211,7 +211,7 @@ export default function ChatPage() {
           ))}
           {streaming && (
             <div className="flex justify-start">
-              <div className="max-w-[70%] rounded-lg border border-white/8 bg-black/30 px-4 py-2 text-sm whitespace-pre-wrap text-white/80">
+              <div className="max-w-[70%] rounded-lg border border-violet-200 bg-white/92 px-4 py-2 text-sm whitespace-pre-wrap text-[#2f2147]">
                 {streaming}
               </div>
             </div>
@@ -220,10 +220,10 @@ export default function ChatPage() {
         </div>
 
         {/* Input bar */}
-        <div className="border-t border-white/8 bg-canvas p-4">
+        <div className="border-t border-violet-200/80 bg-white/72 p-4 backdrop-blur">
           <div className="flex gap-2">
             <input
-              className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-white/25 transition focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
+              className="flex-1 rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-[#2f2147] placeholder:text-[#8b7aa9] transition focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
               placeholder={
                 workflowId
                   ? "Type a message..."
@@ -251,7 +251,7 @@ export default function ChatPage() {
       </div>
 
       {toast && (
-        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg border border-red-500/20 bg-[#1a1a2e] px-4 py-3 text-sm text-white shadow-xl backdrop-blur-2xl">
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg border border-red-200 bg-white/95 px-4 py-3 text-sm text-[#2f2147] shadow-xl backdrop-blur-2xl">
           <span className="h-2 w-2 rounded-full bg-red-400" />
           {toast}
         </div>

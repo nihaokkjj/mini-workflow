@@ -14,7 +14,7 @@ function KnowledgeRetrievalNodeComponent({
         <span className="text-lg">📚</span>
         <span className="font-semibold text-node-retrieval">Knowledge</span>
       </div>
-      <div className="mt-1 text-xs text-white/40">
+      <div className="mt-1 text-xs text-[#3e6f7c]">
         {String(data.retrievalMode || "keyword")} · topK{" "}
         {Number(data.topK || 4)}
       </div>

@@ -38,16 +38,16 @@ export function WorkflowRunResultsPanel({
   }
 
   return (
-    <div className="h-[28rem] border-t border-white/8 bg-canvas">
-      <div className="flex items-center justify-between border-b border-white/8 bg-[#0d0d14] px-4 py-3">
+    <div className="h-[28rem] border-t border-violet-200/80 bg-white/70 backdrop-blur">
+      <div className="flex items-center justify-between border-b border-violet-200/80 bg-white/85 px-4 py-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab("node-results")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition ${
               activeTab === "node-results"
-                ? "bg-white text-black"
-                : "bg-white/5 text-white/50 hover:text-white"
+                ? "bg-accent text-white"
+                : "bg-violet-50 text-[#5e4b85] hover:text-[#2f2147]"
             }`}
           >
             Node Results
@@ -57,14 +57,14 @@ export function WorkflowRunResultsPanel({
             onClick={() => setActiveTab("console")}
             className={`rounded-full px-3 py-1 text-xs font-medium transition ${
               activeTab === "console"
-                ? "bg-white text-black"
-                : "bg-white/5 text-white/50 hover:text-white"
+                ? "bg-accent text-white"
+                : "bg-violet-50 text-[#5e4b85] hover:text-[#2f2147]"
             }`}
           >
             Console
           </button>
         </div>
-        <div className="text-xs text-white/40">
+        <div className="text-xs text-[#7b6b9d]">
           {nodeRunResults.length} node result
           {nodeRunResults.length === 1 ? "" : "s"}
         </div>
@@ -72,13 +72,13 @@ export function WorkflowRunResultsPanel({
 
       <div className="h-[calc(28rem-57px)] overflow-y-auto p-4">
         {activeTab === "console" ? (
-          <div className="rounded-xl bg-[#0d0d14] p-4 font-mono text-sm text-node-code">
+          <div className="rounded-xl border border-violet-200 bg-white/92 p-4 font-mono text-sm text-node-code">
             <pre className="whitespace-pre-wrap">
               {output || "No console output yet."}
             </pre>
           </div>
         ) : nodeRunResults.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-8 text-center text-sm text-white/40">
+          <div className="rounded-xl border border-dashed border-violet-200 bg-white/92 px-4 py-8 text-center text-sm text-[#7b6b9d]">
             Run the workflow to inspect node outputs.
           </div>
         ) : (
@@ -88,14 +88,14 @@ export function WorkflowRunResultsPanel({
               return (
                 <div
                   key={`${result.nodeId}-${result.timestamp}`}
-                  className="rounded-2xl border border-white/8 bg-black/20"
+                  className="rounded-2xl border border-violet-200 bg-white/92"
                 >
                   <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                     <div>
-                      <div className="text-sm font-semibold text-white/80">
+                      <div className="text-sm font-semibold text-[#2f2147]">
                         {result.nodeId}
                       </div>
-                      <div className="mt-1 text-xs text-white/40">
+                      <div className="mt-1 text-xs text-[#7b6b9d]">
                         {result.nodeType} ·{" "}
                         {new Date(result.timestamp).toLocaleTimeString()}
                       </div>
@@ -114,7 +114,7 @@ export function WorkflowRunResultsPanel({
                         contextPreviewLength={220}
                       />
                     ) : (
-                      <pre className="overflow-auto rounded-xl bg-canvas px-4 py-4 text-xs text-white/70">
+                      <pre className="overflow-auto rounded-xl bg-violet-50 px-4 py-4 text-xs text-[#4b377f]">
                         {JSON.stringify(result.outputs, null, 2)}
                       </pre>
                     )}

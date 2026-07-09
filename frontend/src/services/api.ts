@@ -3,11 +3,14 @@ import type {
   AppDatasetBindingDto,
   AppDto,
   ConversationDto,
+  CreateDatasetDto,
+  DatasetDocumentDto,
   DatasetDto,
   Graph,
   GraphEngineEvent,
   MessageDto,
   ModelDto,
+  PaginatedResponse,
   RetrieveRequestDto,
   RetrievalResultDto,
   RunDto,
@@ -27,7 +30,7 @@ export const createApp = (
   name: string,
   mode: "chat" | "workflow" = "workflow"
 ) => api.post<AppDto>("/apps", { name, mode });
-export const listApps = () => api.get<AppDto[]>("/apps");
+export const listApps = () => api.get<PaginatedResponse<AppDto>>("/apps");
 export const getApp = (id: string) => api.get<AppDto>(`/apps/${id}`);
 export const deleteApp = (id: string) => api.delete(`/apps/${id}`);
 
@@ -62,6 +65,12 @@ export const listModels = () => api.get<ModelDto[]>("/models");
 
 // RAG
 export const listDatasets = () => api.get<DatasetDto[]>("/rag/datasets");
+export const createDataset = (dto: CreateDatasetDto) =>
+  api.post<DatasetDto>("/rag/datasets", dto);
+export const getDataset = (id: string) =>
+  api.get<DatasetDto>(`/rag/datasets/${id}`);
+export const listDocuments = (datasetId: string) =>
+  api.get<DatasetDocumentDto[]>(`/rag/datasets/${datasetId}/documents`);
 export const listAppDatasets = (appId: string) =>
   api.get<AppDatasetBindingDto[]>(`/apps/${appId}/datasets`);
 export const debugRetrieve = (input: RetrieveRequestDto) =>
@@ -70,6 +79,16 @@ export const bindAppDataset = (appId: string, datasetId: string) =>
   api.post<AppDatasetBindingDto>(`/apps/${appId}/datasets/${datasetId}`);
 export const unbindAppDataset = (appId: string, datasetId: string) =>
   api.delete(`/apps/${appId}/datasets/${datasetId}`);
+export const uploadDocument = (datasetId: string, file: File, name: string) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("name", name);
+  return api.post<DatasetDocumentDto>(
+    `/rag/datasets/${datasetId}/documents/upload`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+};
 
 // Conversations
 export const createConversation = (appId: string) =>

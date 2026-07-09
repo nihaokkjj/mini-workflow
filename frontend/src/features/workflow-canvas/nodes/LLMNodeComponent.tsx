@@ -10,7 +10,7 @@ function LLMNodeComponent({ data }: { data: Record<string, unknown> }) {
         <span className="text-lg">🤖</span>
         <span className="font-semibold text-node-llm">LLM</span>
       </div>
-      <div className="mt-1 text-xs text-white/40">
+      <div className="mt-1 text-xs text-[#5e4b85]">
         {(data.model as string) || "gpt-4o-mini"}
       </div>
     </div>

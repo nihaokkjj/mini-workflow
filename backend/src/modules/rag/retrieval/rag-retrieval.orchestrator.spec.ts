@@ -7,13 +7,11 @@ import {
   SearchHit,
   SearchIndexAdapter,
 } from "../adapters/search-index.adapter";
-import { ContextAssembler, Source } from "./context-assembler";
 import { DatasetSelector } from "./dataset-selector";
 import { RagRetrievalOrchestrator } from "./rag-retrieval.orchestrator";
-import { RetrievalPolicyResolver } from "./retrieval-policy-resolver";
-import { RetrievalTraceBuilder } from "./retrieval-trace-builder";
+import { Source, SourceHydrator } from "./source-hydrator";
 
-function makeDataset(overrides: Partial<Dataset>): Dataset {
+function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
   return {
     id: "dataset-1",
     name: "Dataset",
@@ -33,7 +31,9 @@ function makeDataset(overrides: Partial<Dataset>): Dataset {
   };
 }
 
-function makeBinding(overrides: Partial<AppDatasetBinding>): AppDatasetBinding {
+function makeBinding(
+  overrides: Partial<AppDatasetBinding> = {}
+): AppDatasetBinding {
   return {
     id: "binding-1",
     appId: "app-1",
@@ -84,11 +84,8 @@ function createOrchestrator({
   return new RagRetrievalOrchestrator(
     datasetRepo as never,
     new DatasetSelector(bindingRepo as never),
-    new RetrievalPolicyResolver(),
     searchIndex,
-    sourceHydrator as never,
-    new ContextAssembler(),
-    new RetrievalTraceBuilder()
+    sourceHydrator as never
   );
 }
 
@@ -203,5 +200,185 @@ test("RagRetrievalOrchestrator rejects datasetIds that are not bound to the app"
     (error: unknown) =>
       error instanceof ForbiddenException &&
       error.message.includes("Datasets are not bound to app app-1: dataset-2")
+  );
+});
+
+test("retrieval policy resolves topK from input override", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [makeDataset({ id: "dataset-1", topK: 4 })],
+    bindings: [makeBinding({ datasetId: "dataset-1" })],
+    hits: [],
+    sources: [],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+    topK: 10,
+  });
+
+  assert.strictEqual(result.trace.plan.topK, 10);
+});
+
+test("retrieval policy resolves topK from max across datasets", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [
+      makeDataset({ id: "dataset-1", topK: 4 }),
+      makeDataset({ id: "dataset-2", topK: 8 }),
+    ],
+    bindings: [
+      makeBinding({ datasetId: "dataset-1" }),
+      makeBinding({ id: "binding-2", datasetId: "dataset-2" }),
+    ],
+    hits: [],
+    sources: [],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+  });
+
+  assert.strictEqual(result.trace.plan.topK, 8);
+});
+
+test("retrieval policy resolves scoreThreshold from input override", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [makeDataset({ id: "dataset-1", scoreThreshold: 0.15 })],
+    bindings: [makeBinding({ datasetId: "dataset-1" })],
+    hits: [],
+    sources: [],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+    scoreThreshold: 0.5,
+  });
+
+  assert.strictEqual(result.trace.plan.scoreThreshold, 0.5);
+});
+
+test("retrieval policy defaults to keyword when datasets have mixed retrieval modes", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [
+      makeDataset({ id: "dataset-1", retrievalMode: "semantic" }),
+      makeDataset({ id: "dataset-2", retrievalMode: "keyword" }),
+    ],
+    bindings: [
+      makeBinding({ datasetId: "dataset-1" }),
+      makeBinding({ id: "binding-2", datasetId: "dataset-2" }),
+    ],
+    hits: [],
+    sources: [],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+  });
+
+  assert.strictEqual(result.trace.plan.retrievalMode, "keyword");
+});
+
+test("retrieval policy uses dataset retrievalMode when all datasets agree", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [
+      makeDataset({ id: "dataset-1", retrievalMode: "semantic" }),
+      makeDataset({ id: "dataset-2", retrievalMode: "semantic" }),
+    ],
+    bindings: [
+      makeBinding({ datasetId: "dataset-1" }),
+      makeBinding({ id: "binding-2", datasetId: "dataset-2" }),
+    ],
+    hits: [],
+    sources: [],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+  });
+
+  assert.strictEqual(result.trace.plan.retrievalMode, "semantic");
+});
+
+test("retrieval policy candidateK is at least topK * 2", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [makeDataset({ id: "dataset-1", topK: 5 })],
+    bindings: [makeBinding({ datasetId: "dataset-1" })],
+    hits: [],
+    sources: [],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+  });
+
+  assert.strictEqual(result.trace.plan.candidateK, 10);
+});
+
+test("context assembly formats sources with numbering", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [makeDataset()],
+    bindings: [makeBinding()],
+    hits: [{ segmentId: "segment-1", score: 0.9 }],
+    sources: [
+      {
+        title: "Doc / 段落 1",
+        content: "first content",
+        datasetId: "dataset-1",
+        datasetName: "Dataset",
+        documentId: "document-1",
+        documentName: "Doc1",
+        segmentId: "segment-1",
+        score: 0.9,
+        position: 0,
+      },
+    ],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+  });
+
+  assert.strictEqual(result.context, "[1] Doc1 / 段落 1\nfirst content");
+});
+
+test("trace classifies hits below threshold as dropped", async () => {
+  const orchestrator = createOrchestrator({
+    datasets: [makeDataset()],
+    bindings: [makeBinding()],
+    hits: [
+      { segmentId: "segment-1", score: 0.9 },
+      { segmentId: "segment-2", score: 0.1 },
+    ],
+    sources: [
+      {
+        title: "Doc / 段落 1",
+        content: "content",
+        datasetId: "dataset-1",
+        datasetName: "Dataset",
+        documentId: "document-1",
+        documentName: "Doc",
+        segmentId: "segment-1",
+        score: 0.9,
+        position: 0,
+      },
+    ],
+  });
+
+  const result = await orchestrator.retrieve({
+    appId: "app-1",
+    query: "test",
+  });
+
+  assert.strictEqual(result.trace.droppedHits.length, 1);
+  assert.strictEqual(result.trace.droppedHits[0].segmentId, "segment-2");
+  assert.strictEqual(
+    result.trace.droppedHits[0].reason,
+    "score_below_threshold"
   );
 });

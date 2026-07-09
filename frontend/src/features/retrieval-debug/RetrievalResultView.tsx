@@ -15,7 +15,7 @@ function HitList({
   emptyText: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/8 bg-black/20">
+    <div className="rounded-xl border border-white/12 bg-white/[0.06]">
       <div className="border-b border-white/8 px-3 py-2 text-sm font-medium text-white/70">
         {title}
       </div>
@@ -61,13 +61,13 @@ export function RetrievalResultView({
     <div className="space-y-4">
       {/* Stats */}
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+        <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Query
           </div>
           <div className="mt-2 text-sm text-white/70">{result.query}</div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+        <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Retrieval Mode
           </div>
@@ -75,7 +75,7 @@ export function RetrievalResultView({
             {result.trace.plan.retrievalMode}
           </div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+        <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Sources
           </div>
@@ -83,7 +83,7 @@ export function RetrievalResultView({
             {result.sourceCount}
           </div>
         </div>
-        <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+        <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
             Datasets
           </div>
@@ -96,7 +96,7 @@ export function RetrievalResultView({
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
           {/* Dataset Selection */}
-          <div className="rounded-xl border border-white/8 bg-black/20 px-4 py-4">
+          <div className="rounded-xl border border-white/12 bg-white/[0.06] px-4 py-4">
             <div className="text-sm font-medium text-white/70">
               Dataset Selection
             </div>
@@ -178,7 +178,7 @@ export function RetrievalResultView({
         </div>
 
         {/* Sources */}
-        <div className="rounded-xl border border-white/8 bg-black/20">
+        <div className="rounded-xl border border-white/12 bg-white/[0.06]">
           <div className="border-b border-white/8 px-4 py-3 text-sm font-medium text-white/70">
             Sources
           </div>
@@ -203,7 +203,7 @@ export function RetrievalResultView({
                       {source.score.toFixed(3)}
                     </div>
                   </div>
-                  <div className="mt-3 rounded-lg bg-[#0d0d14] px-3 py-3 text-xs leading-5 text-white/60">
+                  <div className="mt-3 rounded-lg bg-[#2a2346] px-3 py-3 text-xs leading-5 text-white/65">
                     {source.content}
                   </div>
                 </div>

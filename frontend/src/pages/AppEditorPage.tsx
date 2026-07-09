@@ -23,30 +23,30 @@ export default function AppEditorPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Top bar */}
-      <div className="flex h-12 items-center gap-4 border-b border-white/8 bg-canvas px-4">
+      <div className="flex h-12 items-center gap-4 border-b border-violet-200/80 bg-white/70 px-4 backdrop-blur">
         <button
           onClick={() => navigate("/")}
-          className="text-sm text-white/50 transition hover:text-white"
+          className="text-sm text-[#6b5a8b] transition hover:text-[#2f2147]"
         >
           ← Back
         </button>
-        <span className="font-semibold text-white">
+        <span className="font-semibold text-[#2f2147]">
           {app?.name ?? "Loading..."}
         </span>
         <button
           type="button"
           onClick={() => setIsRetrievalDebugOpen(true)}
-          className="ml-auto rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/60 transition hover:border-white/20 hover:text-white"
+          className="ml-auto rounded-md border border-violet-200 bg-white/85 px-3 py-1.5 text-sm font-medium text-[#5e4b85] transition hover:border-violet-300 hover:bg-white hover:text-[#2f2147]"
         >
           Retrieval Debug
         </button>
         <button
           type="button"
           onClick={() => setIsDatasetDrawerOpen(true)}
-          className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/60 transition hover:border-white/20 hover:text-white"
+          className="rounded-md border border-violet-200 bg-white/85 px-3 py-1.5 text-sm font-medium text-[#5e4b85] transition hover:border-violet-300 hover:bg-white hover:text-[#2f2147]"
         >
           Datasets
-          <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/40">
+          <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-xs text-[#7b6b9d]">
             {appDatasets.length}
           </span>
         </button>
@@ -54,7 +54,7 @@ export default function AppEditorPage() {
 
       <div className="flex-1">
         {workflowLoading ? (
-          <div className="flex h-full items-center justify-center gap-3 text-sm text-white/40">
+          <div className="flex h-full items-center justify-center gap-3 text-sm text-[#7b6b9d]">
             <div className="h-5 w-5 rounded-full border-2 border-white/10 border-t-accent animate-spin" />
             Loading workflow...
           </div>

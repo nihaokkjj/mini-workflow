@@ -13,7 +13,7 @@ function CodeNodeComponent({ data }: { data: Record<string, unknown> }) {
         <span className="text-lg">🧮</span>
         <span className="font-semibold text-node-code">Code</span>
       </div>
-      <div className="mt-1 truncate font-mono text-xs text-white/40">
+      <div className="mt-1 truncate font-mono text-xs text-[#4f5f52]">
         {preview}
       </div>
       <Handle type="source" position={Position.Bottom} />

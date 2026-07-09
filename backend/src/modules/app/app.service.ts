@@ -2,21 +2,37 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { App } from "../../database/entities/app.entity";
+import type { PaginatedResponse } from "../../types";
 
 @Injectable()
 export class AppService {
   constructor(
     @InjectRepository(App)
-    private readonly repo: Repository<App>,
+    private readonly repo: Repository<App>
   ) {}
 
-  async create(data: { name: string; description?: string; mode?: "chat" | "workflow" }): Promise<App> {
+  async create(data: {
+    name: string;
+    description?: string;
+    mode?: "chat" | "workflow";
+  }): Promise<App> {
     const app = this.repo.create({ ...data, mode: data.mode ?? "workflow" });
     return this.repo.save(app);
   }
 
-  async findAll(): Promise<App[]> {
-    return this.repo.find({ order: { createdAt: "DESC" } });
+  async findAll(page = 1, pageSize = 20): Promise<PaginatedResponse<App>> {
+    const [items, total] = await this.repo.findAndCount({
+      order: { createdAt: "DESC" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   async findById(id: string): Promise<App | null> {

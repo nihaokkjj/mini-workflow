@@ -9,7 +9,7 @@ function StartNodeComponent({ data }: { data: Record<string, unknown> }) {
         <span className="h-3 w-3 rounded-full bg-node-start" />
         <span className="font-semibold text-node-start">Start</span>
       </div>
-      <div className="mt-1 text-xs text-white/40">
+      <div className="mt-1 text-xs text-[#5e4b85]">
         {(data.inputs as Record<string, string>)?.input ?? "Input"}
       </div>
     </div>

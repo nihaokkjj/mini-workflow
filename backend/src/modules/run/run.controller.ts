@@ -1,20 +1,18 @@
 import { Controller, Post, Get, Body, Param, Res } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from "@nestjs/swagger";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
 import { Response } from "express";
 import { RunService } from "./run.service";
-import { Run } from "../../database/entities/run.entity";
 import { RunWorkflowDto } from "../../types";
+import {
+  setupSSE,
+  pipeSSEStream,
+  writeSSEError,
+} from "../../common/sse/sse.helper";
 
 @ApiTags("运行管理")
 @Controller("api/runs")
 export class RunController {
-  constructor(
-    private readonly service: RunService,
-    @InjectRepository(Run)
-    private readonly runRepo: Repository<Run>,
-  ) {}
+  constructor(private readonly service: RunService) {}
 
   @Post()
   @ApiOperation({
@@ -69,32 +67,19 @@ export class RunController {
   })
   @ApiResponse({ status: 404, description: "运行不存在" })
   async stream(@Param("runId") runId: string, @Res() res: Response) {
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
-    res.flushHeaders();
+    setupSSE(res);
 
-    const run = await this.runRepo.findOne({ where: { id: runId } });
+    const run = await this.service.findRun(runId);
     if (!run) {
-      res.write(`event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message: "Run not found", timestamp: Date.now() })}\n\n`);
-      res.end();
+      writeSSEError(res, "Run not found");
       return;
     }
 
-    try {
-      for await (const event of this.service.executeRun(
-        run.workflowId,
-        (run.inputs as Record<string, unknown>) ?? {},
-        runId,
-      )) {
-        res.write(`event: ${event.event}\ndata: ${JSON.stringify(event)}\n\n`);
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown execution error";
-      res.write(`event: error\ndata: ${JSON.stringify({ event: "error", nodeId: null, nodeType: null, message, timestamp: Date.now() })}\n\n`);
-    } finally {
-      res.end();
-    }
+    const stream = this.service.executeRun(
+      run.workflowId,
+      (run.inputs as Record<string, unknown>) ?? {},
+      runId
+    );
+    await pipeSSEStream(res, stream);
   }
 }
