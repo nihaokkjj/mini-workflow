@@ -18,7 +18,12 @@ import {
 import { Response } from "express";
 import { ConversationService } from "./conversation.service";
 import { RunService } from "../run/run.service";
-import { CreateConversationDto, ChatRunDto, PaginationDto } from "../../types";
+import {
+  CreateConversationDto,
+  ChatRunDto,
+  PaginationDto,
+  FindConversationsByAppDto,
+} from "../../types";
 
 @ApiTags("会话管理")
 @Controller("api/conversations")
@@ -69,15 +74,8 @@ export class ConversationController {
   @ApiQuery({ name: "page", required: false, type: Number, example: 1 })
   @ApiQuery({ name: "pageSize", required: false, type: Number, example: 20 })
   @ApiResponse({ status: 200, description: "分页会话列表" })
-  async findByApp(
-    @Query("appId") appId: string,
-    @Query() pagination: PaginationDto
-  ) {
-    return this.convService.findByApp(
-      appId,
-      pagination.page,
-      pagination.pageSize
-    );
+  async findByApp(@Query() query: FindConversationsByAppDto) {
+    return this.convService.findByApp(query.appId, query.page, query.pageSize);
   }
 
   @Delete(":id")

@@ -1,7 +1,7 @@
 import { Controller, Get, Put, Param, Body } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from "@nestjs/swagger";
 import { WorkflowService } from "./workflow.service";
-import { CreateWorkflowDto } from "../../types";
+import { SaveWorkflowDto } from "../../types";
 
 @ApiTags("工作流管理")
 @Controller("api/workflows")
@@ -21,7 +21,7 @@ export class WorkflowController {
   })
   @ApiResponse({ status: 200, description: "工作流保存成功" })
   @ApiResponse({ status: 404, description: "应用不存在" })
-  save(@Param("appId") appId: string, @Body() dto: CreateWorkflowDto) {
+  save(@Param("appId") appId: string, @Body() dto: SaveWorkflowDto) {
     return this.service.createOrUpdate(appId, dto.graph);
   }
 

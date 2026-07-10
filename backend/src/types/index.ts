@@ -148,15 +148,7 @@ export type GraphEngineEvent =
 
 // ==================== DTOs ====================
 
-export class CreateWorkflowDto {
-  @ApiProperty({
-    description: "所属应用的 ID",
-    example: "550e8400-e29b-41d4-a716-446655440000",
-  })
-  @IsString()
-  @IsNotEmpty()
-  appId: string;
-
+export class SaveWorkflowDto {
   @ApiProperty({
     description: "工作流的图结构定义（包含节点和边）",
     example: {
@@ -293,6 +285,16 @@ export class PaginationDto {
   @Min(1)
   @Type(() => Number)
   pageSize?: number;
+}
+
+export class FindConversationsByAppDto extends PaginationDto {
+  @ApiProperty({
+    description: "应用 ID",
+    example: "550e8400-e29b-41d4-a716-446655440000",
+  })
+  @IsString()
+  @IsNotEmpty()
+  appId: string;
 }
 
 export interface PaginatedResponse<T> {

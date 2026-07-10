@@ -28,7 +28,9 @@ export default function ChatPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const chatRequestedForNewConversation = useRef(false);
   const { data: messages = [] } = useMessages(
-    selectedId && !chatRequestedForNewConversation ? selectedId : undefined
+    selectedId && !chatRequestedForNewConversation.current
+      ? selectedId
+      : undefined
   );
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
@@ -104,6 +106,7 @@ export default function ChatPage() {
             setStreaming("");
           }
           setOptimisticUserMessages([]);
+          chatRequestedForNewConversation.current = false;
           queryClient.invalidateQueries({
             queryKey: conversationKeys.messages(convId),
           });

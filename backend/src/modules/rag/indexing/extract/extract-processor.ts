@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { extname } from "node:path";
 import { Injectable } from "@nestjs/common";
-import pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import * as mammoth from "mammoth";
 import * as xlsx from "xlsx";
 
@@ -44,8 +44,14 @@ export class ExtractProcessor {
 
         case ".pdf": {
           const buffer = readFileSync(filePath);
-          const result = await pdfParse(buffer);
-          return result.text;
+          // pdf-parse 2.x 已切换为类 API，测试环境下不能再按旧版函数调用。
+          const parser = new PDFParse({ data: buffer });
+          try {
+            const result = await parser.getText();
+            return result.text;
+          } finally {
+            await parser.destroy();
+          }
         }
 
         case ".docx": {

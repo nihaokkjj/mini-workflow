@@ -29,7 +29,7 @@ const NODE_TEMPLATES: { type: NodeType; label: string; color: string }[] = [
   {
     type: "template",
     label: "Template",
-    color: "border-white/30 text-white/60 bg-white/5",
+    color: "border-violet-200 text-[#6b46c1] bg-white/90",
   },
   {
     type: "knowledge-retrieval",
@@ -50,8 +50,8 @@ export function NodePalette() {
   };
 
   return (
-    <div className="flex w-48 flex-col gap-2 border-r border-white/8 bg-canvas p-3">
-      <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.8px] text-white/40">
+    <div className="flex w-48 flex-col gap-2 border-r border-violet-200/80 bg-white/72 p-3 backdrop-blur">
+      <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.8px] text-[#7b6b9d]">
         Nodes
       </h3>
       {NODE_TEMPLATES.map((t) => (
@@ -59,7 +59,7 @@ export function NodePalette() {
           key={t.type}
           draggable
           onDragStart={(e) => onDragStart(e, t.type)}
-          className={`cursor-grab rounded-lg border px-3 py-2 text-sm font-medium transition hover:brightness-125 ${t.color}`}
+          className={`cursor-grab rounded-lg border px-3 py-2 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_12px_30px_rgba(124,58,237,0.12)] ${t.color}`}
         >
           {t.label}
         </div>

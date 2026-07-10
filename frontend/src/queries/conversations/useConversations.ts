@@ -7,6 +7,6 @@ export function useConversations(appId: string | undefined) {
     queryKey: conversationKeys.byApp(appId ?? ""),
     queryFn: () => listConversations(appId!),
     enabled: Boolean(appId),
-    select: (res) => res.data,
+    select: (res) => res.data.items,
   });
 }

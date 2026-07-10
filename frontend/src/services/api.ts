@@ -95,10 +95,12 @@ export const createConversation = (appId: string) =>
   api.post<ConversationDto>("/conversations", { appId });
 
 export const listConversations = (appId: string) =>
-  api.get<ConversationDto[]>(`/conversations?appId=${appId}`);
+  api.get<PaginatedResponse<ConversationDto>>(`/conversations?appId=${appId}`);
 
 export const getMessages = (conversationId: string) =>
-  api.get<MessageDto[]>(`/conversations/${conversationId}/messages`);
+  api.get<PaginatedResponse<MessageDto>>(
+    `/conversations/${conversationId}/messages`
+  );
 
 export const deleteConversation = (id: string) =>
   api.delete(`/conversations/${id}`);

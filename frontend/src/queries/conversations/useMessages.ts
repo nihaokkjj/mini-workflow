@@ -7,6 +7,6 @@ export function useMessages(conversationId: string | undefined) {
     queryKey: conversationKeys.messages(conversationId ?? ""),
     queryFn: () => getMessages(conversationId!),
     enabled: Boolean(conversationId),
-    select: (res) => res.data,
+    select: (res) => res.data.items,
   });
 }
