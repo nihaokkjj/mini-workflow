@@ -31,6 +31,7 @@ test("has() returns true for built-in node types", () => {
   assert.strictEqual(NodeFactory.has("template"), true);
   assert.strictEqual(NodeFactory.has("code"), true);
   assert.strictEqual(NodeFactory.has("knowledge-retrieval"), true);
+  assert.strictEqual(NodeFactory.has("iteration"), true);
 });
 
 test("has() returns false for unknown node types", () => {

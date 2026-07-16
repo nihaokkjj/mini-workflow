@@ -19,11 +19,9 @@ export default function DatasetManagementPage() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#2f2147]">
-              Knowledge Bases
-            </h1>
+            <h1 className="text-2xl font-bold text-[#2f2147]">知识库</h1>
             <p className="mt-1 text-sm text-[#5e4b85]">
-              Manage datasets and upload documents for RAG retrieval
+              管理用于 RAG 检索的数据集和文档
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -31,7 +29,7 @@ export default function DatasetManagementPage() {
               to="/"
               className="rounded-lg px-4 py-2 text-sm text-[#6b5a8b] transition hover:bg-white/70 hover:text-[#2f2147]"
             >
-              ← Back to Apps
+              ← 返回应用
             </Link>
             <button
               type="button"
@@ -41,7 +39,7 @@ export default function DatasetManagementPage() {
                 background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
               }}
             >
-              + Create Dataset
+              + 创建知识库
             </button>
           </div>
         </div>
@@ -54,7 +52,7 @@ export default function DatasetManagementPage() {
               onClick={() => setSelected(null)}
               className="text-[#7b6b9d] hover:text-[#4b377f] transition"
             >
-              ← All Datasets
+              ← 全部知识库
             </button>
             <span className="text-[#c5bbdd]">/</span>
             <span className="font-medium text-[#4b377f]">{selected.name}</span>
@@ -64,7 +62,7 @@ export default function DatasetManagementPage() {
         {/* Error */}
         {error && (
           <div className="mb-6 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            Failed to load datasets
+            知识库加载失败
           </div>
         )}
 
@@ -72,7 +70,7 @@ export default function DatasetManagementPage() {
         {isLoading && (
           <div className="flex items-center gap-3 py-8 text-sm text-[#7b6b9d]">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
-            Loading datasets...
+            知识库加载中...
           </div>
         )}
 
@@ -82,7 +80,7 @@ export default function DatasetManagementPage() {
             {datasets.length === 0 ? (
               <div className="rounded-xl border border-dashed border-white/14 bg-white/[0.06] px-6 py-12 text-center">
                 <p className="text-sm text-[#7b6b9d]">
-                  No datasets yet. Create one to get started.
+                  还没有知识库。先创建一个知识库开始使用。
                 </p>
               </div>
             ) : (
@@ -103,14 +101,14 @@ export default function DatasetManagementPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-[#7b6b9d]">
-                      {dataset.description?.trim() || "No description"}
+                      {dataset.description?.trim() || "暂无描述"}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#7b6b9d]">
                       <span className="rounded-full bg-violet-50 px-2 py-1">
-                        Status: {dataset.status}
+                        状态：{dataset.status}
                       </span>
                       <span className="rounded-full bg-violet-50 px-2 py-1">
-                        Chunk: {dataset.chunkSize}
+                        分块：{dataset.chunkSize}
                       </span>
                       <span className="rounded-full bg-violet-50 px-2 py-1">
                         Top K: {dataset.topK}
@@ -172,7 +170,7 @@ function DatasetDetail({
               {dataset.name}
             </h3>
             <p className="mt-1 text-sm text-[#5e4b85]">
-              {dataset.description?.trim() || "No description"}
+              {dataset.description?.trim() || "暂无描述"}
             </p>
           </div>
           <button
@@ -183,26 +181,26 @@ function DatasetDetail({
               background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
             }}
           >
-            + Add Document
+            + 添加文档
           </button>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
           <div>
-            <span className="text-[#7b6b9d]">Retrieval</span>
+            <span className="text-[#7b6b9d]">检索模式</span>
             <p className="font-medium text-[#4b377f]">
               {dataset.retrievalMode}
             </p>
           </div>
           <div>
-            <span className="text-[#7b6b9d]">Chunk Size</span>
+            <span className="text-[#7b6b9d]">分块大小</span>
             <p className="font-medium text-[#4b377f]">{dataset.chunkSize}</p>
           </div>
           <div>
-            <span className="text-[#7b6b9d]">Overlap</span>
+            <span className="text-[#7b6b9d]">重叠</span>
             <p className="font-medium text-[#4b377f]">{dataset.chunkOverlap}</p>
           </div>
           <div>
-            <span className="text-[#7b6b9d]">Top K / Threshold</span>
+            <span className="text-[#7b6b9d]">Top K / 阈值</span>
             <p className="font-medium text-[#4b377f]">
               {dataset.topK} / {dataset.scoreThreshold}
             </p>
@@ -212,7 +210,7 @@ function DatasetDetail({
 
       {/* Documents */}
       <div>
-        <h4 className="mb-3 text-sm font-semibold text-[#5e4b85]">Documents</h4>
+        <h4 className="mb-3 text-sm font-semibold text-[#5e4b85]">文档</h4>
         <DocumentList documents={documents} isLoading={isLoading} />
       </div>
     </div>

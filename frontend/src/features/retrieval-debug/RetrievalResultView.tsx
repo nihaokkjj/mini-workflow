@@ -63,13 +63,13 @@ export function RetrievalResultView({
       <div className="grid gap-3 md:grid-cols-4">
         <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
-            Query
+            查询
           </div>
           <div className="mt-2 text-sm text-white/70">{result.query}</div>
         </div>
         <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
-            Retrieval Mode
+            检索模式
           </div>
           <div className="mt-2 text-sm font-semibold text-white/70">
             {result.trace.plan.retrievalMode}
@@ -77,7 +77,7 @@ export function RetrievalResultView({
         </div>
         <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
-            Sources
+            来源
           </div>
           <div className="mt-2 text-sm font-semibold text-white/70">
             {result.sourceCount}
@@ -85,7 +85,7 @@ export function RetrievalResultView({
         </div>
         <div className="rounded-xl border border-white/12 bg-white/[0.06] px-3 py-3">
           <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
-            Datasets
+            知识库
           </div>
           <div className="mt-2 text-sm font-semibold text-white/70">
             {selectedDatasetIds.length}
@@ -97,23 +97,21 @@ export function RetrievalResultView({
         <div className="space-y-4">
           {/* Dataset Selection */}
           <div className="rounded-xl border border-white/12 bg-white/[0.06] px-4 py-4">
-            <div className="text-sm font-medium text-white/70">
-              Dataset Selection
-            </div>
+            <div className="text-sm font-medium text-white/70">知识库选择</div>
             <div className="mt-2 text-xs text-white/40">
               {result.trace.usedExplicitSelection
-                ? "Using an explicit dataset selection from the request or node config."
-                : "No explicit dataset selection was provided, so the app's bound datasets were used."}
+                ? "使用请求或节点配置中指定的知识库。"
+                : "未指定知识库，因此使用应用绑定的全部知识库。"}
             </div>
             <div className="mt-3 grid gap-3 md:grid-cols-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.8px] text-white/30">
-                  Requested
+                  请求指定
                 </div>
                 <div className="mt-2 space-y-1">
                   {(requestedDatasetIds.length > 0
                     ? requestedDatasetIds
-                    : ["All bound datasets"]
+                    : ["全部已绑定知识库"]
                   ).map((datasetId) => (
                     <div
                       key={datasetId}
@@ -126,7 +124,7 @@ export function RetrievalResultView({
               </div>
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.8px] text-white/30">
-                  Selected
+                  实际选择
                 </div>
                 <div className="mt-2 space-y-1">
                   {selectedDatasetIds.map((datasetId) => (
@@ -141,7 +139,7 @@ export function RetrievalResultView({
               </div>
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.8px] text-white/30">
-                  Plan
+                  计划
                 </div>
                 <div className="mt-2 space-y-1 text-xs text-white/50">
                   <div>topK: {result.trace.plan.topK}</div>
@@ -155,19 +153,19 @@ export function RetrievalResultView({
           {/* Hit lists */}
           <div className="grid gap-4 lg:grid-cols-3">
             <HitList
-              title="Raw Hits"
+              title="原始命中"
               hits={result.trace.rawHits}
-              emptyText="No raw hits were returned."
+              emptyText="没有返回原始命中。"
             />
             <HitList
-              title="Filtered Hits"
+              title="过滤后命中"
               hits={result.trace.filteredHits}
-              emptyText="No hit survived threshold filtering."
+              emptyText="没有命中通过阈值过滤。"
             />
             <HitList
-              title="Dropped Hits"
+              title="丢弃命中"
               hits={result.trace.droppedHits}
-              emptyText="No hit was dropped by the threshold."
+              emptyText="没有命中被阈值丢弃。"
             />
           </div>
 
@@ -180,11 +178,11 @@ export function RetrievalResultView({
         {/* Sources */}
         <div className="rounded-xl border border-white/12 bg-white/[0.06]">
           <div className="border-b border-white/8 px-4 py-3 text-sm font-medium text-white/70">
-            Sources
+            来源
           </div>
           {result.sources.length === 0 ? (
             <div className="px-4 py-4 text-sm text-white/40">
-              No source survived the retrieval pipeline.
+              没有来源通过检索流程。
             </div>
           ) : (
             <div className="divide-y divide-white/5">
@@ -196,7 +194,7 @@ export function RetrievalResultView({
                         {source.documentName}
                       </div>
                       <div className="mt-1 text-xs text-white/40">
-                        {source.datasetName} · segment {source.position}
+                        {source.datasetName} · 分段 {source.position}
                       </div>
                     </div>
                     <div className="shrink-0 rounded-full bg-white/5 px-2 py-1 text-xs font-medium text-white/50">

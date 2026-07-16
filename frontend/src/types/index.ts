@@ -164,6 +164,7 @@ export interface RetrieveRequestDto {
 }
 
 export type GraphEngineEvent =
+  | { event: "run_started"; runId: string; timestamp: number }
   | {
       event: "node_start";
       nodeId: string;

@@ -132,7 +132,7 @@ export default function LoginPage() {
                   href="https://github.com"
                   target="_blank"
                   className="login-github-link"
-                  aria-label="View on GitHub"
+                  aria-label="在 GitHub 查看"
                   rel="noreferrer"
                 >
                   <svg

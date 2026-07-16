@@ -57,7 +57,7 @@ export function WorkflowRunResultsPanel({
                 : "bg-violet-50 text-[#5e4b85] hover:text-[#2f2147]"
             }`}
           >
-            Node Results
+            节点结果
           </button>
           <button
             type="button"
@@ -68,13 +68,12 @@ export function WorkflowRunResultsPanel({
                 : "bg-violet-50 text-[#5e4b85] hover:text-[#2f2147]"
             }`}
           >
-            Console
+            控制台
           </button>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-xs text-[#7b6b9d]">
-            {nodeRunResults.length} node result
-            {nodeRunResults.length === 1 ? "" : "s"}
+            {nodeRunResults.length} 个节点结果
           </div>
           <button
             type="button"
@@ -93,12 +92,12 @@ export function WorkflowRunResultsPanel({
           {activeTab === "console" ? (
             <div className="rounded-xl border border-violet-200 bg-white/92 p-4 font-mono text-sm text-node-code">
               <pre className="whitespace-pre-wrap">
-                {output || "No console output yet."}
+                {output || "暂无控制台输出。"}
               </pre>
             </div>
           ) : nodeRunResults.length === 0 ? (
             <div className="rounded-xl border border-dashed border-violet-200 bg-white/92 px-4 py-8 text-center text-sm text-[#7b6b9d]">
-              Run the workflow to inspect node outputs.
+              运行工作流后查看节点输出。
             </div>
           ) : (
             <div className="space-y-4">
@@ -121,8 +120,8 @@ export function WorkflowRunResultsPanel({
                       </div>
                       {retrievalOutput && (
                         <div className="rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
-                          {retrievalOutput.sourceCount} sources ·{" "}
-                          {retrievalOutput.hits.length} hits
+                          {retrievalOutput.sourceCount} 个来源 ·{" "}
+                          {retrievalOutput.hits.length} 个命中
                         </div>
                       )}
                     </div>

@@ -101,7 +101,7 @@ const HELP_DOCUMENTS: Array<{
 // Build the RAG workflow graph
 // ---------------------------------------------------------------------------
 
-function buildRagWorkflowGraph(datasetId: string): Graph {
+export function buildRagWorkflowGraph(datasetId: string): Graph {
   return {
     nodes: [
       {
@@ -146,10 +146,14 @@ function buildRagWorkflowGraph(datasetId: string): Graph {
         width: 260,
         height: 140,
         data: {
-          model: "kimi-latest",
-          prompt: [
-            "你是一个专业的客服助手。请基于以下知识库内容回答用户问题。",
+          model: "gpt-4o-mini",
+          baseURL: "https://api.openai.com/v1",
+          systemPrompt: [
+            "你是一个专业的客服助手。",
+            "请严格基于知识库检索结果回答用户问题。",
             "如果知识库中没有相关信息，请如实告知用户。",
+          ].join("\n"),
+          userPrompt: [
             "",
             "## 知识库检索结果",
             "{{knowledge-retrieval-1.context}}",
@@ -204,7 +208,7 @@ function buildRagWorkflowGraph(datasetId: string): Graph {
 // Main seed logic
 // ---------------------------------------------------------------------------
 
-async function seed() {
+export async function seed() {
   await dataSource.initialize();
   console.log("✓ 数据库已连接\n");
 
@@ -364,7 +368,9 @@ async function seed() {
   console.log("\n✓ 完成");
 }
 
-seed().catch((err) => {
-  console.error("Seed failed:", err);
-  process.exit(1);
-});
+if (require.main === module) {
+  seed().catch((err) => {
+    console.error("Seed failed:", err);
+    process.exit(1);
+  });
+}

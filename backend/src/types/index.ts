@@ -123,6 +123,7 @@ export interface ExecutionContext {
 // ==================== SSE Event Types ====================
 
 export type GraphEngineEvent =
+  | { event: "run_started"; runId: string; timestamp: number }
   | {
       event: "node_start";
       nodeId: string;
@@ -165,7 +166,12 @@ export class SaveWorkflowDto {
           type: "llm",
           title: "AI 对话",
           position: { x: 300, y: 100 },
-          data: { model: "kimi-latest", prompt: "你好，请回答问题：{{query}}" },
+          data: {
+            model: "gpt-4o-mini",
+            baseURL: "https://api.openai.com/v1",
+            systemPrompt: "你是一个有帮助的助手。",
+            userPrompt: "你好，请回答问题：{{start-1.query}}",
+          },
         },
         {
           id: "end-1",

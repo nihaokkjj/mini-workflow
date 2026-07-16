@@ -97,9 +97,9 @@ function WorkflowCanvasInner({
   const handleSave = async () => {
     try {
       await saveWorkflow(appId, canvas.getGraph());
-      showToast("success", "Workflow saved");
+      showToast("success", "工作流已保存");
     } catch {
-      showToast("error", "Save failed");
+      showToast("error", "保存失败");
     }
   };
 
@@ -136,26 +136,26 @@ function WorkflowCanvasInner({
               background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
             }}
           >
-            Save
+            保存
           </button>
           <button
             onClick={handleRun}
             disabled={runState.isRunning}
             className="rounded-lg bg-node-code px-4 py-1.5 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
-            {runState.isRunning ? "Running..." : "Run"}
+            {runState.isRunning ? "运行中..." : "运行"}
           </button>
           {runState.isRunning && (
             <button
               onClick={handleStop}
               className="rounded-lg bg-node-end px-4 py-1.5 text-sm font-medium text-white transition hover:brightness-110"
             >
-              Stop
+              停止
             </button>
           )}
           {runState.executingNodeId && (
             <span className="text-sm text-[#6b5a8b]">
-              Executing:{" "}
+              正在执行：{" "}
               <span className="font-mono text-node-llm">
                 {runState.executingNodeId}
               </span>
@@ -174,10 +174,10 @@ function WorkflowCanvasInner({
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
               <div className="rounded-xl border border-dashed border-violet-200 bg-white/85 px-5 py-4 text-center backdrop-blur">
                 <div className="text-sm font-medium text-[#2f2147]">
-                  Drag nodes from the left panel
+                  从左侧面板拖入节点
                 </div>
                 <div className="mt-1 text-xs text-[#7b6b9d]">
-                  Start with Start, add work nodes, then connect to End.
+                  从开始节点出发，添加处理节点，再连接到结束节点。
                 </div>
               </div>
             </div>

@@ -20,14 +20,14 @@ export function CollapsibleTextBlock({
   return (
     <div className="rounded-xl border border-white/12 bg-white/[0.06]">
       <div className="flex items-center justify-between border-b border-white/8 px-3 py-2">
-        <div className="text-sm font-medium text-white/70">Context</div>
+        <div className="text-sm font-medium text-white/70">上下文</div>
         {collapseState.isCollapsedByDefault && (
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
             className="text-xs font-medium text-accent transition hover:text-accent-2"
           >
-            {expanded ? "Collapse" : "Expand"}
+            {expanded ? "收起" : "展开"}
           </button>
         )}
       </div>

@@ -76,7 +76,7 @@ export default function ChatPage() {
         setSelectedId(convId);
       } catch {
         chatRequestedForNewConversation.current = false;
-        showToast("Failed to create conversation");
+        showToast("会话创建失败");
         return;
       }
     }
@@ -118,13 +118,33 @@ export default function ChatPage() {
     );
   };
 
+  const handleStop = async () => {
+    try {
+      await chat.stop();
+    } catch {
+      showToast("运行取消失败");
+    } finally {
+      setStreaming("");
+      setOptimisticUserMessages([]);
+      chatRequestedForNewConversation.current = false;
+      if (selectedId) {
+        queryClient.invalidateQueries({
+          queryKey: conversationKeys.messages(selectedId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: conversationKeys.byApp(appId!),
+        });
+      }
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this conversation?")) return;
+    if (!confirm("删除这个会话？")) return;
     try {
       await deleteConversation.mutateAsync(id);
       if (selectedId === id) setSelectedId(null);
     } catch {
-      showToast("Failed to delete conversation");
+      showToast("会话删除失败");
     }
   };
 
@@ -144,7 +164,7 @@ export default function ChatPage() {
             onClick={() => navigate("/")}
             className="text-sm text-[#6b5a8b] transition hover:text-[#2f2147]"
           >
-            ← Back
+            ← 返回
           </button>
           <span className="truncate text-sm font-semibold text-[#4b377f]">
             {app?.name}
@@ -160,7 +180,7 @@ export default function ChatPage() {
             background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
           }}
         >
-          New Chat
+          新建会话
         </button>
         <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
           {conversations.map((c) => (
@@ -177,7 +197,7 @@ export default function ChatPage() {
               }`}
             >
               <span className="truncate text-[#5e4b85]">
-                Conversation {c.id.slice(0, 8)}
+                会话 {c.id.slice(0, 8)}
               </span>
               <button
                 onClick={(e) => {
@@ -227,11 +247,7 @@ export default function ChatPage() {
           <div className="flex gap-2">
             <input
               className="flex-1 rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-[#2f2147] placeholder:text-[#8b7aa9] transition focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
-              placeholder={
-                workflowId
-                  ? "Type a message..."
-                  : "No workflow found for this app"
-              }
+              placeholder={workflowId ? "输入消息..." : "此应用还没有工作流"}
               value={input}
               disabled={!workflowId || runState.isRunning}
               onChange={(e) => setInput(e.target.value)}
@@ -240,14 +256,16 @@ export default function ChatPage() {
               }
             />
             <button
-              onClick={handleSend}
-              disabled={!workflowId || runState.isRunning || !input.trim()}
+              onClick={runState.isRunning ? handleStop : handleSend}
+              disabled={!workflowId || (!runState.isRunning && !input.trim())}
               className="rounded-xl px-5 py-3 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-50"
               style={{
-                background: "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
+                background: runState.isRunning
+                  ? "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"
+                  : "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
               }}
             >
-              {runState.isRunning ? "..." : "Send"}
+              {runState.isRunning ? "停止" : "发送"}
             </button>
           </div>
         </div>

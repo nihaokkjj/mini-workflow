@@ -13,6 +13,7 @@ import { decryptGraphSensitiveFields } from "../../common/crypto/graph-crypto";
 import {
   setupSSE,
   pipeSSEStream,
+  writeSSEEvent,
   writeSSEError,
 } from "../../common/sse/sse.helper";
 
@@ -148,8 +149,16 @@ export class RunService implements OnModuleInit {
       return;
     }
 
-    // Mark running — only if still pending (guards against concurrent starts)
-    await this.updateRun(runId, { status: ["pending"] }, { status: "running" });
+    // 只有 pending run 能进入执行，避免取消请求抢先落库后引擎仍继续运行。
+    const startResult = await this.updateRun(
+      runId,
+      { status: ["pending"] },
+      { status: "running" }
+    );
+    if ((startResult.affected ?? 0) === 0) {
+      yield this.makeErrorEvent("Run was canceled");
+      return;
+    }
 
     // Build context and engine
     const controller = new AbortController();
@@ -281,6 +290,13 @@ export class RunService implements OnModuleInit {
     // 创建运行记录并流式推送执行事件
     const run = await this.createRun(dto.workflowId, dto.inputs);
     let assistantContent: string | undefined;
+
+    // 会话流是单请求协议，先把 runId 发给前端，停止时才能取消后端执行。
+    writeSSEEvent(res, {
+      event: "run_started",
+      runId: run.id,
+      timestamp: Date.now(),
+    });
 
     await pipeSSEStream(
       res,

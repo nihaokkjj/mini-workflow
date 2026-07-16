@@ -10,27 +10,27 @@ const statusConfig: Record<
   { label: string; className: string }
 > = {
   pending: {
-    label: "Pending",
+    label: "等待中",
     className: "bg-yellow-500/15 text-yellow-400",
   },
   indexing: {
-    label: "Indexing",
+    label: "索引中",
     className: "bg-blue-500/15 text-blue-400",
   },
   completed: {
-    label: "Completed",
+    label: "已完成",
     className: "bg-green-500/15 text-green-400",
   },
   failed: {
-    label: "Failed",
+    label: "失败",
     className: "bg-red-500/15 text-red-400",
   },
 };
 
 const sourceTypeConfig: Record<DatasetDocumentDto["sourceType"], string> = {
-  text: "Text",
+  text: "文本",
   markdown: "Markdown",
-  file: "File",
+  file: "文件",
 };
 
 export function DocumentList({ documents, isLoading }: DocumentListProps) {
@@ -38,7 +38,7 @@ export function DocumentList({ documents, isLoading }: DocumentListProps) {
     return (
       <div className="flex items-center gap-3 py-4 text-sm text-[#7b6b9d]">
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
-        Loading documents...
+        文档加载中...
       </div>
     );
   }
@@ -52,13 +52,13 @@ export function DocumentList({ documents, isLoading }: DocumentListProps) {
       {hasInProgress && (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/8 px-3 py-2 text-sm text-accent">
           <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          Indexing in progress...
+          正在建立索引...
         </div>
       )}
 
       {documents.length === 0 ? (
         <div className="rounded-xl border border-dashed border-violet-200 bg-white/90 px-4 py-10 text-center text-sm text-[#7b6b9d]">
-          No documents uploaded yet
+          还没有上传文档
         </div>
       ) : (
         <div className="space-y-2">

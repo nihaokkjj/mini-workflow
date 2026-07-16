@@ -39,7 +39,7 @@ export function AppDatasetBindingsDrawer({
         await bindMutation.mutateAsync(datasetId);
       }
     } catch {
-      setError("Failed to update app datasets");
+      setError("应用知识库更新失败");
     } finally {
       setBusyDatasetId(null);
     }
@@ -49,7 +49,7 @@ export function AppDatasetBindingsDrawer({
     <>
       <button
         type="button"
-        aria-label="Close dataset bindings"
+        aria-label="关闭知识库绑定"
         onClick={onClose}
         className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
       />
@@ -58,14 +58,13 @@ export function AppDatasetBindingsDrawer({
           <div className="flex items-start justify-between border-b border-violet-200 px-5 py-4">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.8px] text-[#7b6b9d]">
-                App Datasets
+                应用知识库
               </div>
               <h2 className="mt-1 text-lg font-semibold text-[#2f2147]">
                 {appName}
               </h2>
               <p className="mt-1 text-sm text-[#5e4b85]">
-                Bind datasets here, then pick them in the knowledge retrieval
-                node.
+                在这里绑定知识库，然后在知识检索节点中选择使用范围。
               </p>
             </div>
             <button
@@ -78,12 +77,10 @@ export function AppDatasetBindingsDrawer({
           </div>
 
           <div className="border-b border-violet-200 bg-violet-50/70 px-5 py-4">
-            <div className="text-sm font-medium text-[#4b377f]">
-              Currently bound
-            </div>
+            <div className="text-sm font-medium text-[#4b377f]">当前已绑定</div>
             {bindings.length === 0 ? (
               <p className="mt-2 text-sm text-[#7b6b9d]">
-                No dataset is bound to this app yet.
+                此应用还没有绑定知识库。
               </p>
             ) : (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -109,12 +106,11 @@ export function AppDatasetBindingsDrawer({
             {loading ? (
               <div className="flex items-center gap-3 text-sm text-[#7b6b9d]">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
-                Loading datasets...
+                知识库加载中...
               </div>
             ) : datasets.length === 0 ? (
               <div className="rounded-xl border border-dashed border-white/14 bg-white/[0.06] px-4 py-5 text-sm text-white/45">
-                No dataset has been created yet. Create one through the RAG API
-                first, then bind it to this app here.
+                还没有创建知识库。请先创建知识库，再在这里绑定到应用。
               </div>
             ) : (
               <div className="space-y-3">
@@ -142,17 +138,17 @@ export function AppDatasetBindingsDrawer({
                             </span>
                           </div>
                           <p className="mt-1 text-xs text-[#7b6b9d]">
-                            {dataset.description?.trim() || "No description"}
+                            {dataset.description?.trim() || "暂无描述"}
                           </p>
                           <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#7b6b9d]">
                             <span className="rounded-full bg-violet-50 px-2 py-1">
-                              Status: {dataset.status}
+                              状态：{dataset.status}
                             </span>
                             <span className="rounded-full bg-violet-50 px-2 py-1">
                               Top K: {dataset.topK}
                             </span>
                             <span className="rounded-full bg-violet-50 px-2 py-1">
-                              Threshold: {dataset.scoreThreshold}
+                              阈值：{dataset.scoreThreshold}
                             </span>
                           </div>
                         </div>
@@ -166,7 +162,7 @@ export function AppDatasetBindingsDrawer({
                               : "bg-accent text-white hover:brightness-110"
                           }`}
                         >
-                          {isBusy ? "Saving..." : isBound ? "Unbind" : "Bind"}
+                          {isBusy ? "保存中..." : isBound ? "解绑" : "绑定"}
                         </button>
                       </div>
                       <div className="mt-3 truncate font-mono text-[11px] text-[#b2a6cc]">

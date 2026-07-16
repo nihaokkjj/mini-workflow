@@ -62,9 +62,7 @@ export function RetrievalDebugDrawer({
       setResult(data);
     } catch (submitError) {
       setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Failed to run retrieval debug"
+        submitError instanceof Error ? submitError.message : "检索调试运行失败"
       );
       setResult(null);
     } finally {
@@ -76,7 +74,7 @@ export function RetrievalDebugDrawer({
     <>
       <button
         type="button"
-        aria-label="Close retrieval debug"
+        aria-label="关闭检索调试"
         onClick={onClose}
         className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
       />
@@ -86,14 +84,13 @@ export function RetrievalDebugDrawer({
           <div className="flex items-start justify-between border-b border-white/8 px-5 py-4">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.8px] text-white/30">
-                Retrieval Debug
+                检索调试
               </div>
               <h2 className="mt-1 text-lg font-semibold text-white">
                 {appName}
               </h2>
               <p className="mt-1 text-sm text-white/40">
-                Run the retrieval pipeline directly and inspect datasets, hits,
-                sources, trace, and the assembled context.
+                直接运行检索流程，查看知识库、命中结果、来源、追踪信息和拼接后的上下文。
               </p>
             </div>
             <button
@@ -110,10 +107,10 @@ export function RetrievalDebugDrawer({
             <div className="border-r border-white/8 bg-[#2a2346] px-5 py-5">
               <div className="space-y-4">
                 <label className="block">
-                  <div className={labelClass}>Query</div>
+                  <div className={labelClass}>查询</div>
                   <textarea
                     className={`${inputClass} h-24`}
-                    placeholder="Ask a retrieval-only question"
+                    placeholder="输入一个只用于检索的问题"
                     value={form.query}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -125,7 +122,7 @@ export function RetrievalDebugDrawer({
                 </label>
 
                 <label className="block">
-                  <div className={labelClass}>Retrieval Mode</div>
+                  <div className={labelClass}>检索模式</div>
                   <select
                     className={`${inputClass} bg-white/[0.12]`}
                     value={form.retrievalMode}
@@ -137,9 +134,9 @@ export function RetrievalDebugDrawer({
                       }))
                     }
                   >
-                    <option value="keyword">keyword</option>
-                    <option value="semantic">semantic</option>
-                    <option value="hybrid">hybrid</option>
+                    <option value="keyword">关键词</option>
+                    <option value="semantic">语义</option>
+                    <option value="hybrid">混合</option>
                   </select>
                 </label>
 
@@ -160,7 +157,7 @@ export function RetrievalDebugDrawer({
                     />
                   </label>
                   <label className="block">
-                    <div className={labelClass}>Threshold</div>
+                    <div className={labelClass}>阈值</div>
                     <input
                       type="number"
                       min={0}
@@ -186,11 +183,10 @@ export function RetrievalDebugDrawer({
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium text-white/70">
-                        Datasets
+                        知识库
                       </div>
                       <div className="mt-1 text-xs text-white/40">
-                        Leave all unchecked to use every dataset bound to this
-                        app.
+                        不勾选时，将使用此应用绑定的全部知识库。
                       </div>
                     </div>
                     {form.datasetIds.length > 0 && (
@@ -201,13 +197,13 @@ export function RetrievalDebugDrawer({
                         }
                         className="text-xs font-medium text-accent hover:text-accent-2 transition"
                       >
-                        Use all
+                        使用全部
                       </button>
                     )}
                   </div>
                   {bindings.length === 0 ? (
                     <div className="mt-3 rounded-lg border border-dashed border-white/14 bg-white/[0.06] px-3 py-3 text-sm text-white/45">
-                      No dataset is currently bound to this app.
+                      此应用当前没有绑定知识库。
                     </div>
                   ) : (
                     <div className="mt-3 space-y-2">
@@ -248,7 +244,7 @@ export function RetrievalDebugDrawer({
                       "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
                   }}
                 >
-                  {isSubmitting ? "Running..." : "Run Retrieval Debug"}
+                  {isSubmitting ? "运行中..." : "运行检索调试"}
                 </button>
               </div>
             </div>
@@ -265,8 +261,7 @@ export function RetrievalDebugDrawer({
                 <RetrievalResultView result={result} />
               ) : (
                 <div className="flex h-full min-h-[280px] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-black/20 px-6 text-center text-sm text-white/40">
-                  Run a retrieval query to inspect trace, hits, sources, and the
-                  final context.
+                  运行一次检索查询，查看追踪信息、命中结果、来源和最终上下文。
                 </div>
               )}
             </div>

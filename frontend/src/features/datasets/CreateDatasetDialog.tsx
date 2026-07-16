@@ -45,7 +45,7 @@ export function CreateDatasetDialog({
       onCreated?.(dataset);
       onClose();
     } catch {
-      setError("Failed to create dataset");
+      setError("知识库创建失败");
     }
   };
 
@@ -53,7 +53,7 @@ export function CreateDatasetDialog({
     <>
       <button
         type="button"
-        aria-label="Close dialog"
+        aria-label="关闭弹窗"
         onClick={onClose}
         className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
       />
@@ -62,7 +62,7 @@ export function CreateDatasetDialog({
           <form onSubmit={handleSubmit}>
             <div className="flex items-center justify-between border-b border-violet-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-[#2f2147]">
-                Create Dataset
+                创建知识库
               </h2>
               <button
                 type="button"
@@ -75,28 +75,28 @@ export function CreateDatasetDialog({
 
             <div className="space-y-4 px-6 py-4">
               <div>
-                <label className={labelClass}>Name</label>
+                <label className={labelClass}>名称</label>
                 <input
                   className={inputClass}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Product Help Center"
+                  placeholder="例如：产品帮助中心"
                   required
                 />
               </div>
 
               <div>
-                <label className={labelClass}>Description</label>
+                <label className={labelClass}>描述</label>
                 <input
                   className={inputClass}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Optional description"
+                  placeholder="可选描述"
                 />
               </div>
 
               <div>
-                <label className={labelClass}>Retrieval Mode</label>
+                <label className={labelClass}>检索模式</label>
                 <select
                   className={inputClass}
                   value={retrievalMode}
@@ -106,15 +106,15 @@ export function CreateDatasetDialog({
                     )
                   }
                 >
-                  <option value="keyword">Keyword</option>
-                  <option value="semantic">Semantic</option>
-                  <option value="hybrid">Hybrid</option>
+                  <option value="keyword">关键词</option>
+                  <option value="semantic">语义</option>
+                  <option value="hybrid">混合</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelClass}>Chunk Size</label>
+                  <label className={labelClass}>分块大小</label>
                   <input
                     className={inputClass}
                     type="number"
@@ -125,7 +125,7 @@ export function CreateDatasetDialog({
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Chunk Overlap</label>
+                  <label className={labelClass}>分块重叠</label>
                   <input
                     className={inputClass}
                     type="number"
@@ -150,7 +150,7 @@ export function CreateDatasetDialog({
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Score Threshold</label>
+                  <label className={labelClass}>分数阈值</label>
                   <input
                     className={inputClass}
                     type="number"
@@ -176,7 +176,7 @@ export function CreateDatasetDialog({
                 onClick={onClose}
                 className="rounded-lg px-4 py-2 text-sm text-[#6b5a8b] transition hover:bg-violet-50 hover:text-[#2f2147]"
               >
-                Cancel
+                取消
               </button>
               <button
                 type="submit"
@@ -187,7 +187,7 @@ export function CreateDatasetDialog({
                     "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
                 }}
               >
-                {createMutation.isPending ? "Creating..." : "Create Dataset"}
+                {createMutation.isPending ? "创建中..." : "创建知识库"}
               </button>
             </div>
           </form>

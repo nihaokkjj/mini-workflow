@@ -8,12 +8,13 @@ import { HttpNode } from "../nodes/http.node";
 import { TemplateNode } from "../nodes/template.node";
 import { CodeNode } from "../nodes/code.node";
 import { KnowledgeRetrievalNode } from "../nodes/knowledge-retrieval.node";
+import { IterationNode } from "../nodes/iteration.node";
 
 /** Map of node type string to its constructor */
 type NodeConstructor = new (
   config: NodeConfig,
   pool: VariablePool,
-  context: ExecutionContext,
+  context: ExecutionContext
 ) => BaseNode;
 
 export class NodeFactory {
@@ -28,6 +29,7 @@ export class NodeFactory {
     this.register("template", TemplateNode);
     this.register("code", CodeNode);
     this.register("knowledge-retrieval", KnowledgeRetrievalNode);
+    this.register("iteration", IterationNode);
   }
 
   static register(type: string, ctor: NodeConstructor): void {
@@ -41,7 +43,7 @@ export class NodeFactory {
   static create(
     config: NodeConfig,
     pool: VariablePool,
-    context: ExecutionContext,
+    context: ExecutionContext
   ): BaseNode {
     const Ctor = this.registry.get(config.type);
     if (!Ctor) {

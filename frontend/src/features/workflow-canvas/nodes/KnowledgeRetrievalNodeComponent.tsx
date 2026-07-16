@@ -12,7 +12,7 @@ function KnowledgeRetrievalNodeComponent({
       <Handle type="source" position={Position.Bottom} />
       <div className="flex items-center gap-2">
         <span className="text-lg">📚</span>
-        <span className="font-semibold text-node-retrieval">Knowledge</span>
+        <span className="font-semibold text-node-retrieval">知识检索</span>
       </div>
       <div className="mt-1 text-xs text-[#3e6f7c]">
         {String(data.retrievalMode || "keyword")} · topK{" "}

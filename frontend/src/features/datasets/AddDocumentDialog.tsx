@@ -36,10 +36,10 @@ export function AddDocumentDialog({
   const validateFile = (f: File): string | null => {
     const ext = "." + f.name.split(".").pop()?.toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return `Unsupported file type: ${ext}. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}`;
+      return `不支持的文件类型：${ext}。支持：${ALLOWED_EXTENSIONS.join(", ")}`;
     }
     if (f.size > MAX_FILE_SIZE) {
-      return `File too large (${formatBytes(f.size)}). Maximum: ${formatBytes(MAX_FILE_SIZE)}`;
+      return `文件过大（${formatBytes(f.size)}）。最大支持：${formatBytes(MAX_FILE_SIZE)}`;
     }
     return null;
   };
@@ -86,7 +86,7 @@ export function AddDocumentDialog({
       onUploaded?.(doc);
       onClose();
     } catch {
-      setClientError("Failed to upload document");
+      setClientError("文档上传失败");
     }
   };
 
@@ -94,7 +94,7 @@ export function AddDocumentDialog({
     <>
       <button
         type="button"
-        aria-label="Close dialog"
+        aria-label="关闭弹窗"
         onClick={onClose}
         className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
       />
@@ -102,9 +102,7 @@ export function AddDocumentDialog({
         <div className="w-full max-w-md rounded-2xl border border-violet-200 bg-white shadow-2xl">
           <form onSubmit={handleSubmit}>
             <div className="flex items-center justify-between border-b border-violet-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-[#2f2147]">
-                Add Document
-              </h2>
+              <h2 className="text-lg font-semibold text-[#2f2147]">添加文档</h2>
               <button
                 type="button"
                 onClick={onClose}
@@ -116,17 +114,17 @@ export function AddDocumentDialog({
 
             <div className="space-y-4 px-6 py-4">
               <div>
-                <label className={labelClass}>Document Name (optional)</label>
+                <label className={labelClass}>文档名称（可选）</label>
                 <input
                   className={inputClass}
                   value={docName}
                   onChange={(e) => setDocName(e.target.value)}
-                  placeholder="Defaults to file name"
+                  placeholder="默认使用文件名"
                 />
               </div>
 
               <div>
-                <label className={labelClass}>File</label>
+                <label className={labelClass}>文件</label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -164,16 +162,16 @@ export function AddDocumentDialog({
                         }}
                         className="text-xs text-red-400 hover:text-red-300"
                       >
-                        Remove
+                        移除
                       </button>
                     </div>
                   ) : (
                     <>
                       <p className="text-sm text-[#5e4b85]">
-                        Drop a file here or click to browse
+                        将文件拖到这里，或点击选择文件
                       </p>
                       <p className="mt-1 text-xs text-[#7b6b9d]">
-                        .txt .md .pdf .docx .csv .xlsx (max 10 MB)
+                        .txt .md .pdf .docx .csv .xlsx（最大 10 MB）
                       </p>
                     </>
                   )}
@@ -193,7 +191,7 @@ export function AddDocumentDialog({
                 onClick={onClose}
                 className="rounded-lg px-4 py-2 text-sm text-[#6b5a8b] transition hover:bg-violet-50 hover:text-[#2f2147]"
               >
-                Cancel
+                取消
               </button>
               <button
                 type="submit"
@@ -204,7 +202,7 @@ export function AddDocumentDialog({
                     "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
                 }}
               >
-                {uploadMutation.isPending ? "Uploading..." : "Upload & Index"}
+                {uploadMutation.isPending ? "上传中..." : "上传并索引"}
               </button>
             </div>
           </form>

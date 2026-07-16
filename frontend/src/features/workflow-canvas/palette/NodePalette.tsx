@@ -3,7 +3,7 @@ import type { NodeType } from "../../../types";
 const NODE_TEMPLATES: { type: NodeType; label: string; color: string }[] = [
   {
     type: "start",
-    label: "Start",
+    label: "开始",
     color: "border-node-start text-node-start bg-node-start/10",
   },
   {
@@ -13,7 +13,7 @@ const NODE_TEMPLATES: { type: NodeType; label: string; color: string }[] = [
   },
   {
     type: "if-else",
-    label: "If/Else",
+    label: "条件分支",
     color: "border-node-condition text-node-condition bg-node-condition/10",
   },
   {
@@ -23,22 +23,27 @@ const NODE_TEMPLATES: { type: NodeType; label: string; color: string }[] = [
   },
   {
     type: "code",
-    label: "Code",
+    label: "代码",
     color: "border-node-code text-node-code bg-node-code/10",
   },
   {
     type: "template",
-    label: "Template",
+    label: "模板",
     color: "border-violet-200 text-[#6b46c1] bg-white/90",
   },
   {
+    type: "iteration",
+    label: "迭代",
+    color: "border-[#8cc152] text-[#4f7f28] bg-[#eef9e8]",
+  },
+  {
     type: "knowledge-retrieval",
-    label: "Knowledge",
+    label: "知识检索",
     color: "border-node-retrieval text-node-retrieval bg-node-retrieval/10",
   },
   {
     type: "end",
-    label: "End",
+    label: "结束",
     color: "border-node-end text-node-end bg-node-end/10",
   },
 ];
@@ -52,7 +57,7 @@ export function NodePalette() {
   return (
     <div className="flex w-48 flex-col gap-2 border-r border-violet-200/80 bg-white/72 p-3 backdrop-blur">
       <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.8px] text-[#7b6b9d]">
-        Nodes
+        节点
       </h3>
       {NODE_TEMPLATES.map((t) => (
         <div

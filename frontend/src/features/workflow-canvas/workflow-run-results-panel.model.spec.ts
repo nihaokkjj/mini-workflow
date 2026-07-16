@@ -12,7 +12,7 @@ test("run results panel stays hidden when there is no console output or node res
     {
       hasContent: false,
       showsBody: false,
-      toggleLabel: "Collapse",
+      toggleLabel: "收起",
     }
   );
 });
@@ -27,7 +27,7 @@ test("run results panel keeps header visible after collapsing so the user can re
     {
       hasContent: true,
       showsBody: false,
-      toggleLabel: "Expand",
+      toggleLabel: "展开",
     }
   );
 });
@@ -42,7 +42,7 @@ test("run results panel shows body when content exists and the panel is expanded
     {
       hasContent: true,
       showsBody: true,
-      toggleLabel: "Collapse",
+      toggleLabel: "收起",
     }
   );
 });

@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useRunStore } from "../../stores/run.store";
 import { subscribeToJsonStream } from "../../services/sse";
 import { API_BASE_URL } from "../../services/api";
+import { useCancelRun } from "../../queries/runs/useCancelRun";
 import type { GraphEngineEvent } from "../../types";
 
 interface ChatRunOptions {
@@ -12,7 +13,9 @@ interface ChatRunOptions {
 
 export function useChatStream() {
   const store = useRunStore();
+  const cancelMutation = useCancelRun();
   const abortRef = useRef<AbortController | null>(null);
+  const runIdRef = useRef<string | null>(null);
 
   const run = async (
     conversationId: string,
@@ -21,12 +24,16 @@ export function useChatStream() {
     options?: ChatRunOptions
   ) => {
     store.resetRun();
+    runIdRef.current = null;
     abortRef.current = subscribeToJsonStream<GraphEngineEvent>(
       `${API_BASE_URL}/conversations/${conversationId}/runs`,
       {
         onEvent: (event) => {
           store.addEvent(event);
-          if (event.event === "node_chunk") {
+          if (event.event === "run_started") {
+            runIdRef.current = event.runId;
+            store.startRun(event.runId);
+          } else if (event.event === "node_chunk") {
             options?.onChunk?.(event.text);
           } else if (event.event === "node_start") {
             store.setExecutingNode(event.nodeId);
@@ -55,10 +62,15 @@ export function useChatStream() {
     );
   };
 
-  const stop = () => {
+  const stop = async () => {
+    const runId = runIdRef.current;
     abortRef.current?.abort();
     abortRef.current = null;
     store.cancelRun();
+    runIdRef.current = null;
+    if (runId) {
+      await cancelMutation.mutateAsync(runId);
+    }
   };
 
   return { run, stop };

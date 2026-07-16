@@ -27,12 +27,6 @@ const SUPPORTED_LLM_MODELS: SupportedModelOption[] = [
     baseURL: "https://api.openai.com/v1",
   },
   {
-    id: "gpt-5.4",
-    name: "OpenAI GPT-5.4",
-    provider: "OpenAI",
-    baseURL: "https://api.openai.com/v1",
-  },
-  {
     id: "deepseek-chat",
     name: "DeepSeek Chat",
     provider: "DeepSeek",
@@ -69,7 +63,7 @@ function StartConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Input Fields (JSON)</span>
+        <span className={labelClass}>输入字段（JSON）</span>
         <textarea
           className={`${inputClass} h-24 font-mono text-xs`}
           value={JSON.stringify(data.inputs ?? [], null, 2)}
@@ -83,7 +77,7 @@ function StartConfig({
         />
       </label>
       <p className={hintClass}>
-        Format: [{"{"}"variable": "query", "label": "User Query", "type":
+        格式：[{"{"}"variable": "query", "label": "用户问题", "type":
         "text-input"{"}"}]
       </p>
     </div>
@@ -107,8 +101,8 @@ function LLMConfig({
         ...SUPPORTED_LLM_MODELS,
         {
           id: selectedModel,
-          name: `${selectedModel} (current workflow)`,
-          provider: "Custom",
+          name: `${selectedModel}（当前工作流）`,
+          provider: "自定义",
           baseURL: "",
         },
       ];
@@ -130,7 +124,7 @@ function LLMConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Model</span>
+        <span className={labelClass}>模型</span>
         <select
           className={`${inputClass} bg-white/[0.12]`}
           value={selectedModel}
@@ -143,7 +137,7 @@ function LLMConfig({
           ))}
         </select>
         <span className={hintClass}>
-          Provider: {selectedOption?.provider ?? "OpenAI-compatible"}
+          服务商：{selectedOption?.provider ?? "OpenAI 兼容"}
         </span>
       </label>
       <label className="flex flex-col gap-1">
@@ -167,20 +161,18 @@ function LLMConfig({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>System Prompt</span>
+        <span className={labelClass}>系统提示词</span>
         <textarea
           className={`${inputClass} h-20 text-xs`}
-          value={
-            (data.systemPrompt as string) || "You are a helpful assistant."
-          }
+          value={(data.systemPrompt as string) || "你是一个有帮助的助手。"}
           onChange={(e) => onChange({ ...data, systemPrompt: e.target.value })}
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>User Prompt</span>
+        <span className={labelClass}>用户提示词</span>
         <textarea
           className={`${inputClass} h-20 text-xs`}
-          placeholder="e.g. {{start.query}}"
+          placeholder="例如：{{start.query}}"
           value={(data.userPrompt as string) || ""}
           onChange={(e) => onChange({ ...data, userPrompt: e.target.value })}
         />
@@ -199,19 +191,19 @@ function IfElseConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Condition Expression</span>
+        <span className={labelClass}>条件表达式</span>
         <input
           type="text"
           className={`${inputClass} font-mono`}
-          placeholder="e.g. {{llm-1.text}} > 0.5"
+          placeholder="例如：{{llm-1.text}} > 0.5"
           value={(data.condition as string) || ""}
           onChange={(e) => onChange({ ...data, condition: e.target.value })}
         />
       </label>
       <p className={hintClass}>
-        Supported operators: == != &gt; &lt; &gt;= &lt;= contains
+        支持的操作符：== != &gt; &lt; &gt;= &lt;= contains
         <br />
-        Use {"{{nodeId.field}}"} to reference upstream values.
+        使用 {"{{nodeId.field}}"} 引用上游变量。
       </p>
     </div>
   );
@@ -227,7 +219,7 @@ function HttpConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Method</span>
+        <span className={labelClass}>请求方法</span>
         <select
           className={`${inputClass} bg-white/[0.12]`}
           value={(data.method as string) || "GET"}
@@ -248,7 +240,7 @@ function HttpConfig({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Headers (JSON)</span>
+        <span className={labelClass}>请求头（JSON）</span>
         <textarea
           className={`${inputClass} h-20 font-mono text-xs`}
           placeholder='{"Authorization": "Bearer {{token}}"}'
@@ -263,7 +255,7 @@ function HttpConfig({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Body</span>
+        <span className={labelClass}>请求体</span>
         <textarea
           className={`${inputClass} h-20 font-mono text-xs`}
           value={(data.body as string) || ""}
@@ -271,7 +263,7 @@ function HttpConfig({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Timeout (ms)</span>
+        <span className={labelClass}>超时时间（ms）</span>
         <input
           type="number"
           className={inputClass}
@@ -295,7 +287,7 @@ function CodeConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>JavaScript Code</span>
+        <span className={labelClass}>JavaScript 代码</span>
         <textarea
           className={`${inputClass} h-48 font-mono text-xs`}
           placeholder="return $inputs.query.toUpperCase();"
@@ -306,7 +298,7 @@ function CodeConfig({
       <p className={hintClass}>
         Use{" "}
         <code className="rounded bg-white/10 px-1 text-white/50">$inputs</code>{" "}
-        to access mapped input variables.
+        访问映射后的输入变量。
       </p>
     </div>
   );
@@ -322,7 +314,7 @@ function TemplateConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Template</span>
+        <span className={labelClass}>模板</span>
         <textarea
           className={`${inputClass} h-32 font-mono text-xs`}
           placeholder="Hello {{start.query}}!"
@@ -330,6 +322,51 @@ function TemplateConfig({
           onChange={(e) => onChange({ ...data, template: e.target.value })}
         />
       </label>
+    </div>
+  );
+}
+
+function IterationConfig({
+  data,
+  onChange,
+}: {
+  data: Record<string, unknown>;
+  onChange: (d: Record<string, unknown>) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>数据项</span>
+        <textarea
+          className={`${inputClass} h-24 font-mono text-xs`}
+          placeholder='$start-1.items or ["one", "two"]'
+          value={(data.items as string) || ""}
+          onChange={(e) => onChange({ ...data, items: e.target.value })}
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>单项模板</span>
+        <textarea
+          className={`${inputClass} h-24 font-mono text-xs`}
+          placeholder="{{index}}. {{item.name}}"
+          value={(data.itemTemplate as string) || ""}
+          onChange={(e) => onChange({ ...data, itemTemplate: e.target.value })}
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className={labelClass}>拼接符</span>
+        <input
+          type="text"
+          className={`${inputClass} font-mono`}
+          placeholder="\n"
+          value={(data.joinWith as string) ?? "\n"}
+          onChange={(e) => onChange({ ...data, joinWith: e.target.value })}
+        />
+      </label>
+      <p className={hintClass}>
+        使用 $nodeId.items 引用数组输出，或直接填写 JSON 数组。模板变量：
+        {"{{item}}"}、{"{{item.field}}"}、{"{{index}}"}。
+      </p>
     </div>
   );
 }
@@ -353,7 +390,7 @@ function KnowledgeRetrievalConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Query Template</span>
+        <span className={labelClass}>查询模板</span>
         <textarea
           className={`${inputClass} h-20 text-xs`}
           placeholder="{{start-1.query}}"
@@ -362,24 +399,23 @@ function KnowledgeRetrievalConfig({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Retrieval Mode</span>
+        <span className={labelClass}>检索模式</span>
         <select
           className={`${inputClass} bg-white/[0.12]`}
           value={(data.retrievalMode as string) || "keyword"}
           onChange={(e) => onChange({ ...data, retrievalMode: e.target.value })}
         >
-          <option value="keyword">keyword</option>
-          <option value="semantic">semantic</option>
-          <option value="hybrid">hybrid</option>
+          <option value="keyword">关键词</option>
+          <option value="semantic">语义</option>
+          <option value="hybrid">混合</option>
         </select>
       </label>
       <div className="flex flex-col gap-2 rounded-lg border border-violet-200 bg-white/90 p-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm font-medium text-[#2f2147]">Datasets</div>
+            <div className="text-sm font-medium text-[#2f2147]">知识库</div>
             <p className="mt-1 text-xs text-[#7b6b9d]">
-              Selecting one or more datasets switches to explicit selection.
-              Clear them all to use every bound dataset.
+              选择一个或多个知识库后，将只从所选知识库检索。清空选择则使用全部已绑定知识库。
             </p>
           </div>
           {!isUsingAllBoundDatasets && (
@@ -388,19 +424,18 @@ function KnowledgeRetrievalConfig({
               onClick={() => onChange(clearExplicitDatasetSelection(data))}
               className="rounded-md bg-violet-50 px-2.5 py-1 text-xs font-medium text-[#5e4b85] ring-1 ring-violet-200 hover:bg-violet-100"
             >
-              Use all
+              使用全部
             </button>
           )}
         </div>
         <div className="rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-[#5e4b85]">
           {isUsingAllBoundDatasets
-            ? `Using all ${bindings.length} bound dataset${bindings.length === 1 ? "" : "s"}`
-            : `Using ${selectedDatasetIds.length} explicitly selected dataset${selectedDatasetIds.length === 1 ? "" : "s"}`}
+            ? `使用全部 ${bindings.length} 个已绑定知识库`
+            : `使用 ${selectedDatasetIds.length} 个已选知识库`}
         </div>
         {bindings.length === 0 ? (
           <div className="rounded-md border border-dashed border-violet-200 bg-white/90 px-3 py-4 text-sm text-[#7b6b9d]">
-            No dataset is bound to this app yet. Bind one from the editor header
-            first.
+            此应用还没有绑定知识库。请先从编辑器顶部绑定知识库。
           </div>
         ) : (
           <div className="space-y-2">
@@ -436,9 +471,8 @@ function KnowledgeRetrievalConfig({
         )}
         {staleDatasetIds.length > 0 && (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-            This workflow still references unbound datasets:{" "}
-            {staleDatasetIds.join(", ")}. Clear them or re-bind them before
-            running.
+            此工作流仍引用未绑定的知识库：{staleDatasetIds.join(", ")}。
+            请先清空选择或重新绑定后再运行。
           </div>
         )}
       </div>
@@ -452,7 +486,7 @@ function KnowledgeRetrievalConfig({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Score Threshold</span>
+        <span className={labelClass}>分数阈值</span>
         <input
           type="number"
           step="0.01"
@@ -477,7 +511,7 @@ function EndConfig({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Output Mappings (JSON)</span>
+        <span className={labelClass}>输出映射（JSON）</span>
         <textarea
           className={`${inputClass} h-24 font-mono text-xs`}
           placeholder='{"result": "llm-1.text"}'
@@ -492,15 +526,11 @@ function EndConfig({
         />
       </label>
       <p className={hintClass}>
-        Map output variable names to node field references like {"nodeId.field"}
+        将输出变量名映射到节点字段引用，例如 {"nodeId.field"}。
       </p>
     </div>
   );
 }
-
-const placeholderConfig = () => (
-  <p className="text-sm text-white/40">Configuration coming soon</p>
-);
 
 const configRenderers: Record<
   NodeType,
@@ -517,10 +547,10 @@ const configRenderers: Record<
   http: (d, o) => <HttpConfig data={d} onChange={o} />,
   code: (d, o) => <CodeConfig data={d} onChange={o} />,
   template: (d, o) => <TemplateConfig data={d} onChange={o} />,
+  iteration: (d, o) => <IterationConfig data={d} onChange={o} />,
   "knowledge-retrieval": (d, o, appDatasets) => (
     <KnowledgeRetrievalConfig bindings={appDatasets} data={d} onChange={o} />
   ),
-  iteration: placeholderConfig,
 };
 
 interface NodeConfigPanelProps {
@@ -552,7 +582,7 @@ export function NodeConfigPanel({
     <div className="flex h-full w-80 flex-col border-l border-violet-200/80 bg-white/70 backdrop-blur">
       <div className="flex items-center justify-between border-b border-violet-200/80 px-4 py-3">
         <h3 className="text-sm font-semibold text-[#2f2147]">
-          {node.type.toUpperCase()} Configuration
+          {node.type.toUpperCase()} 配置
         </h3>
         <button
           onClick={onClose}
@@ -565,7 +595,7 @@ export function NodeConfigPanel({
         {renderer(node.data, handleChange, appDatasets)}
       </div>
       <div className="border-t border-violet-200/80 px-4 py-3 text-xs text-[#7b6b9d]">
-        Node ID: <code className="font-mono text-[#5e4b85]">{node.id}</code>
+        节点 ID：<code className="font-mono text-[#5e4b85]">{node.id}</code>
       </div>
     </div>
   );

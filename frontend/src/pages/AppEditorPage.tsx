@@ -28,24 +28,24 @@ export default function AppEditorPage() {
           onClick={() => navigate("/")}
           className="text-sm text-[#6b5a8b] transition hover:text-[#2f2147]"
         >
-          ← Back
+          ← 返回
         </button>
         <span className="font-semibold text-[#2f2147]">
-          {app?.name ?? "Loading..."}
+          {app?.name ?? "加载中..."}
         </span>
         <button
           type="button"
           onClick={() => setIsRetrievalDebugOpen(true)}
           className="ml-auto rounded-md border border-violet-200 bg-white/85 px-3 py-1.5 text-sm font-medium text-[#5e4b85] transition hover:border-violet-300 hover:bg-white hover:text-[#2f2147]"
         >
-          Retrieval Debug
+          检索调试
         </button>
         <button
           type="button"
           onClick={() => setIsDatasetDrawerOpen(true)}
           className="rounded-md border border-violet-200 bg-white/85 px-3 py-1.5 text-sm font-medium text-[#5e4b85] transition hover:border-violet-300 hover:bg-white hover:text-[#2f2147]"
         >
-          Datasets
+          知识库
           <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-xs text-[#7b6b9d]">
             {appDatasets.length}
           </span>
@@ -56,7 +56,7 @@ export default function AppEditorPage() {
         {workflowLoading ? (
           <div className="flex h-full items-center justify-center gap-3 text-sm text-[#7b6b9d]">
             <div className="h-5 w-5 rounded-full border-2 border-white/10 border-t-accent animate-spin" />
-            Loading workflow...
+            工作流加载中...
           </div>
         ) : (
           <WorkflowCanvas

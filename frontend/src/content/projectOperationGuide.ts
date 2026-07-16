@@ -131,7 +131,7 @@ export const projectOperationGuide: GuideDocument = {
           type: "list",
           items: [
             '聊天页发送消息时，默认传入的是 { query: "用户输入" }',
-            '编辑页点击 Run 时，当前默认传入的是 { input: "Hello" }',
+            '编辑页点击“运行”时，当前默认传入的是 { input: "Hello" }',
             "下游节点能否取到值，取决于真实传入的 inputs 里有没有这个字段",
           ],
         },

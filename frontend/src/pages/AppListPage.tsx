@@ -22,7 +22,7 @@ export default function AppListPage() {
   };
 
   useEffect(() => {
-    if (error) showToast(error.message || "Failed to load apps");
+    if (error) showToast(error.message || "应用加载失败");
   }, [error]);
 
   const handleCreate = async () => {
@@ -34,7 +34,7 @@ export default function AppListPage() {
       });
       navigate(`/app/${data.id}`);
     } catch {
-      showToast("Failed to create app");
+      showToast("应用创建失败");
     }
   };
 
@@ -43,9 +43,9 @@ export default function AppListPage() {
     try {
       await deleteApp.mutateAsync(toDelete);
       setToDelete(null);
-      showToast("App deleted", "success");
+      showToast("应用已删除", "success");
     } catch {
-      showToast("Failed to delete app");
+      showToast("应用删除失败");
     }
   };
 
@@ -60,7 +60,7 @@ export default function AppListPage() {
             Agent<span className="text-accent">Forge</span>
           </h1>
           <p className="mt-2 text-sm text-[#5e4b85]">
-            Create an app, then build its workflow on the canvas.
+            创建应用后，在画布上编排它的工作流。
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -68,13 +68,13 @@ export default function AppListPage() {
             onClick={() => navigate("/datasets")}
             className="shrink-0 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-sm font-medium text-[#4b377f] backdrop-blur transition hover:border-violet-300 hover:bg-white"
           >
-            Datasets
+            知识库
           </button>
           <button
             onClick={() => navigate("/guide")}
             className="shrink-0 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-sm font-medium text-[#4b377f] backdrop-blur transition hover:border-violet-300 hover:bg-white"
           >
-            Guide
+            使用说明
           </button>
         </div>
       </header>
@@ -83,7 +83,7 @@ export default function AppListPage() {
       <div className="mt-8 flex gap-3">
         <input
           className="flex-1 rounded-xl border border-violet-200 bg-white/90 px-4 py-3 text-sm text-[#2f2147] placeholder:text-[#8b7aa9] transition focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/10"
-          placeholder="App name..."
+          placeholder="应用名称..."
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -96,14 +96,14 @@ export default function AppListPage() {
             background: "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
           }}
         >
-          {createApp.isPending ? "Creating..." : "Create App"}
+          {createApp.isPending ? "创建中..." : "创建应用"}
         </button>
       </div>
 
       {/* Section label */}
       <div className="mt-10 mb-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.8px] text-[#7b6b9d]">
-          Your Apps
+          我的应用
         </h2>
       </div>
 
@@ -156,7 +156,7 @@ export default function AppListPage() {
                   onClick={() => navigate(`/app/${app.id}`)}
                   className="flex-1 rounded-lg border border-violet-200 bg-white/85 px-3 py-2 text-sm font-medium text-[#4b377f] transition hover:border-violet-300 hover:bg-white"
                 >
-                  Edit
+                  编辑
                 </button>
                 <button
                   onClick={() => navigate(`/app/${app.id}/chat`)}
@@ -166,13 +166,13 @@ export default function AppListPage() {
                       "linear-gradient(135deg, #a068ff 0%, #42dcdb 100%)",
                   }}
                 >
-                  Chat
+                  聊天
                 </button>
                 <button
                   onClick={() => setToDelete(app.id)}
                   className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm font-medium text-red-400 transition hover:border-red-500/40 hover:bg-red-500/10"
                 >
-                  Delete
+                  删除
                 </button>
               </div>
             </div>
@@ -184,7 +184,7 @@ export default function AppListPage() {
       {!isLoading && apps.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-20">
           <p className="text-sm text-[#7b6b9d]">
-            No apps yet. Create one above to get started.
+            还没有应用。先创建一个应用开始使用。
           </p>
         </div>
       )}
@@ -194,23 +194,21 @@ export default function AppListPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-80 rounded-2xl border border-violet-200 bg-white p-6 shadow-2xl">
             <h3 className="text-base font-semibold text-[#2f2147]">
-              Delete this app?
+              删除这个应用？
             </h3>
-            <p className="mt-1 text-sm text-[#5e4b85]">
-              This action cannot be undone.
-            </p>
+            <p className="mt-1 text-sm text-[#5e4b85]">此操作不可撤销。</p>
             <div className="mt-5 flex justify-end gap-3">
               <button
                 onClick={() => setToDelete(null)}
                 className="rounded-lg border border-violet-200 bg-white/90 px-4 py-2 text-sm font-medium text-[#4b377f] transition hover:border-violet-300 hover:bg-white"
               >
-                Cancel
+                取消
               </button>
               <button
                 onClick={confirmDelete}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
               >
-                Delete
+                删除
               </button>
             </div>
           </div>

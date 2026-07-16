@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 
 function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
-  const condition = (data.condition as string) || "No condition set";
+  const condition = (data.condition as string) || "未设置条件";
   const preview =
     condition.length > 40 ? condition.slice(0, 40) + "..." : condition;
 
@@ -11,7 +11,7 @@ function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
       <Handle type="target" position={Position.Top} />
       <div className="mb-1 flex items-center gap-2">
         <span className="text-lg">🔀</span>
-        <span className="font-semibold text-node-condition">If/Else</span>
+        <span className="font-semibold text-node-condition">条件分支</span>
       </div>
       <div className="rounded bg-white/75 px-2 py-1 font-mono text-xs text-[#5e4b85]">
         {preview}
@@ -25,7 +25,7 @@ function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
             style={{ left: "30%" }}
           />
           <span className="absolute -bottom-4 left-[20%] text-[10px] font-semibold text-node-code">
-            TRUE
+            真
           </span>
         </div>
         <div className="relative">
@@ -36,7 +36,7 @@ function IfElseNodeComponent({ data }: { data: Record<string, unknown> }) {
             style={{ left: "70%" }}
           />
           <span className="absolute -bottom-4 right-[20%] text-[10px] font-semibold text-node-end">
-            FALSE
+            假
           </span>
         </div>
       </div>

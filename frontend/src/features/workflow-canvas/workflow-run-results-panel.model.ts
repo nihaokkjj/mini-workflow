@@ -1,7 +1,7 @@
 export interface WorkflowRunResultsPanelViewModel {
   hasContent: boolean;
   showsBody: boolean;
-  toggleLabel: "Collapse" | "Expand";
+  toggleLabel: "收起" | "展开";
 }
 
 export function createWorkflowRunResultsPanelViewModel({
@@ -18,6 +18,6 @@ export function createWorkflowRunResultsPanelViewModel({
   return {
     hasContent,
     showsBody: hasContent && !isCollapsed,
-    toggleLabel: isCollapsed ? "Expand" : "Collapse",
+    toggleLabel: isCollapsed ? "展开" : "收起",
   };
 }

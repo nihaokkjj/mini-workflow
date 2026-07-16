@@ -7,10 +7,10 @@ function StartNodeComponent({ data }: { data: Record<string, unknown> }) {
       <Handle type="source" position={Position.Bottom} />
       <div className="flex items-center gap-2">
         <span className="h-3 w-3 rounded-full bg-node-start" />
-        <span className="font-semibold text-node-start">Start</span>
+        <span className="font-semibold text-node-start">开始</span>
       </div>
       <div className="mt-1 text-xs text-[#5e4b85]">
-        {(data.inputs as Record<string, string>)?.input ?? "Input"}
+        {(data.inputs as Record<string, string>)?.input ?? "输入"}
       </div>
     </div>
   );

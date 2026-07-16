@@ -6,14 +6,14 @@ function TemplateNodeComponent({ data }: { data: Record<string, unknown> }) {
   const preview =
     template.length > 40
       ? template.slice(0, 40) + "..."
-      : template || "No template";
+      : template || "未配置模板";
 
   return (
     <div className="min-w-[180px] rounded-lg border border-violet-200 bg-white/90 px-4 py-3">
       <Handle type="target" position={Position.Top} />
       <div className="flex items-center gap-2">
         <span className="text-lg">📝</span>
-        <span className="font-semibold text-[#6b46c1]">Template</span>
+        <span className="font-semibold text-[#6b46c1]">模板</span>
       </div>
       <div className="mt-1 truncate font-mono text-xs text-[#5e4b85]">
         {preview}

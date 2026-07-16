@@ -6,6 +6,7 @@ import HttpNodeComponent from "../nodes/HttpNodeComponent";
 import CodeNodeComponent from "../nodes/CodeNodeComponent";
 import TemplateNodeComponent from "../nodes/TemplateNodeComponent";
 import KnowledgeRetrievalNodeComponent from "../nodes/KnowledgeRetrievalNodeComponent";
+import IterationNodeComponent from "../nodes/IterationNodeComponent";
 
 export const nodeTypes = {
   start: StartNodeComponent,
@@ -16,4 +17,5 @@ export const nodeTypes = {
   code: CodeNodeComponent,
   template: TemplateNodeComponent,
   "knowledge-retrieval": KnowledgeRetrievalNodeComponent,
+  iteration: IterationNodeComponent,
 };
